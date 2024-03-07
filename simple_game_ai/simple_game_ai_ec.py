@@ -69,8 +69,14 @@ def evaluate_ai(individual):
 creator.create("FitnessMax", base.Fitness, weights=(1.0,)) 
 creator.create("Individual", list, fitness=creator.FitnessMax)  
 
+# AI Representation (Adjust priorities if needed)
+PRIORITIES = ['center', 'corner', 'random']  
+
+def init_individual(n=5):
+    return [random.choice(PRIORITIES) for _ in range(n)]
+
 toolbox = base.Toolbox()
-toolbox.register("individual", tools.initRepeat, creator.Individual, random.choice, n=5) 
+toolbox.register("individual", init_individual) 
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("evaluate", evaluate_ai)
 toolbox.register("select", tools.selTournament, tournsize=3)

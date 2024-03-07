@@ -4,7 +4,7 @@ import numpy as np
 
 # Assuming 'best_individual' is the output from the improved EC script
 # For demonstration, let's define a sample individual manually
-best_individual = [119, 119, 117, 119, 119]  # Sample timings for each intersection
+best_individual = [113, 120, 113, 120, 120]  # Sample timings for each intersection
 
 # Parameters for simulation
 simulation_duration = sum(best_individual)  # Total duration of one cycle of all lights
