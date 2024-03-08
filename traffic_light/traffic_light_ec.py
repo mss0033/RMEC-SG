@@ -25,7 +25,7 @@ city_config = generate_city_configuration(seed, num_rows, num_cols, complexity)
 city_config = [[1 for x in range(5)] for y in range(5)]
 print(city_config)
 city = City(city_config)
-num_iterations = 60
+num_iterations = 6000
 city.visualize_traffic(num_iterations)
 
 # # Initialize population

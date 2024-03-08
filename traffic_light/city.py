@@ -20,8 +20,7 @@ class City:
         for row in range(num_rows):
             for col in range(num_cols):
                 if self.city_config[row][col] == 1:
-                    intersection = Intersection()
-                    self.intersections[(row, col)] = intersection
+                    self.intersections[(row, col)] = Intersection()
 
     def connect_intersections(self):
         for (row, col), intersection in self.intersections.items():
@@ -40,25 +39,23 @@ class City:
             if self.city_config[row][east_col] == 1:
                 intersection.set_neighbors(east_n=self.intersections[(row, east_col)])
 
-    def add_road(self, intersection1, intersection2):
-        intersection1.set_neighbors(**{direction: intersection2 for direction in ['north_n', 'south_n', 'east_n', 'west_n'] if getattr(intersection2, f"{direction[:-2]}_neighbor") is intersection1})
-        intersection2.set_neighbors(**{direction: intersection1 for direction in ['north_n', 'south_n', 'east_n', 'west_n'] if getattr(intersection1, f"{direction[:-2]}_neighbor") is intersection2})
-
     def get_intersection(self, row, col):
         return self.intersections.get((row, col))
 
     def get_all_intersections(self):
         return list(self.intersections.values())
     
-    def flow_traffic(self):
-        processes = []
+    def flow_traffic(self, iteration: 'int'):
         for intersection in self.intersections.values():
-            process = multiprocessing.Process(target=intersection.flow_traffic)
-            processes.append(process)
-            process.start()
+            intersection.flow_traffic(iteration)
+        # processes = []
+        # for intersection in self.intersections.values():
+        #     process = multiprocessing.Process(target=intersection.flow_traffic)
+        #     processes.append(process)
+        #     process.start()
 
-        for process in processes:
-            process.join()
+        # for process in processes:
+        #     process.join()
 
     def visualize_traffic(self, iterations):
         pygame.init()
@@ -69,74 +66,125 @@ class City:
 
         # Define colors
         BLACK = (0, 0, 0)
-        BLUE = (0,0, 255)
+        BLUE = (0, 0, 255)
         WHITE = (255, 255, 255)
         RED = (255, 0, 0)
         GREEN = (0, 255, 0)
+        YELLOW = (255, 255, 0)
+        GRAY = (128, 128, 128)
+        ROAD_COLOR = (200, 200, 200)
 
         # Calculate cell size based on screen size and grid dimensions
-        cell_width = screen_width // self.num_cols
-        cell_height = screen_height // self.num_rows
+        cell_width = (screen_width - 20) // (self.num_cols + (self.num_cols - 1) // 2)
+        cell_height = (screen_height - 20) // (self.num_rows + (self.num_rows - 1) // 2)
+        road_width = cell_width // 2
+        road_height = cell_height // 2
+
+        # Create font for displaying text
+        font = pygame.font.Font(None, 24)
 
         for iteration in range(iterations):
             # Clear the screen
             screen.fill(WHITE)
 
-            # Draw intersections and roads
+            # Draw roads
+            for row in range(self.num_rows):
+                for col in range(self.num_cols):
+                    x = 10 + col * (cell_width + road_width)
+                    y = 10 + row * (cell_height + road_height)
+                    if col < self.num_cols - 1:
+                        pygame.draw.rect(screen, ROAD_COLOR, (x + cell_width, y, road_width, cell_height))
+                    if row < self.num_rows - 1:
+                        pygame.draw.rect(screen, ROAD_COLOR, (x, y + cell_height, cell_width, road_height))
+
+            # Draw intersections
             for row in range(self.num_rows):
                 for col in range(self.num_cols):
                     if (row, col) not in self.intersections:
                         continue
                     intersection = self.intersections[(row, col)]
-                    x = col * cell_width
-                    y = row * cell_height
+                    print("----------Before traffic flow-----------")
+                    print(intersection)
+                    # Update the traffic lights and vehicle positions
+                    self.flow_traffic(iteration)
+                    print("++++++++++After traffic flow++++++++++")
+                    print(intersection)
+                    x = 10 + col * (cell_width + road_width)
+                    y = 10 + row * (cell_height + road_height)
 
                     # Draw intersection
                     pygame.draw.rect(screen, BLACK, (x, y, cell_width, cell_height), 2)
 
                     # Draw traffic lights
+                    light_radius = 10
+                    light_spacing = 5
                     if intersection.north_light:
-                        color = GREEN if intersection.north_light.is_forward_light_green else RED
-                        pygame.draw.circle(screen, color, (x + cell_width // 2, y), 5)
+                        color = GREEN if intersection.north_light.is_forward_light_green.value else RED
+                        pygame.draw.circle(screen, color, (x + cell_width // 2, y + light_spacing), light_radius)
                     if intersection.south_light:
-                        color = GREEN if intersection.south_light.is_forward_light_green else RED
-                        pygame.draw.circle(screen, color, (x + cell_width // 2, y + cell_height), 5)
+                        color = GREEN if intersection.south_light.is_forward_light_green.value else RED
+                        pygame.draw.circle(screen, color, (x + cell_width // 2, y + cell_height - light_spacing), light_radius)
                     if intersection.east_light:
-                        color = GREEN if intersection.east_light.is_forward_light_green else RED
-                        pygame.draw.circle(screen, color, (x + cell_width, y + cell_height // 2), 5)
+                        color = GREEN if intersection.east_light.is_forward_light_green.value else RED
+                        pygame.draw.circle(screen, color, (x + cell_width - light_spacing, y + cell_height // 2), light_radius)
                     if intersection.west_light:
-                        color = GREEN if intersection.west_light.is_forward_light_green else RED
-                        pygame.draw.circle(screen, color, (x, y + cell_height // 2), 5)
+                        color = GREEN if intersection.west_light.is_forward_light_green.value else RED
+                        pygame.draw.circle(screen, color, (x + light_spacing, y + cell_height // 2), light_radius)
 
                     # Draw vehicles
+                    vehicle_radius = 5
+                    vehicle_spacing = 10
                     for direction in ['north', 'south', 'east', 'west']:
-                        num_vehicles_forward = getattr(intersection, f"cars_waiting_{direction}_forward", 0)
-                        num_vehicles_turning = getattr(intersection, f"cars_waiting_{direction}_turning", 0)
+                        num_vehicles_forward = getattr(intersection, f"cars_waiting_{direction}_forward", 0).value
+                        num_vehicles_turning = getattr(intersection, f"cars_waiting_{direction}_turning", 0).value
                         for i in range(num_vehicles_forward):
                             if direction == 'north':
-                                pygame.draw.circle(screen, BLACK, (x + cell_width // 2, y + i * 10), 3)
+                                pygame.draw.circle(screen, BLUE, (x + cell_width // 2, y + light_spacing + vehicle_spacing * (i + 1)), vehicle_radius)
                             elif direction == 'south':
-                                pygame.draw.circle(screen, BLACK, (x + cell_width // 2, y + cell_height - i * 10), 3)
+                                pygame.draw.circle(screen, BLUE, (x + cell_width // 2, y + cell_height - light_spacing - vehicle_spacing * (i + 1)), vehicle_radius)
                             elif direction == 'east':
-                                pygame.draw.circle(screen, BLACK, (x + cell_width - i * 10, y + cell_height // 2), 3)
+                                pygame.draw.circle(screen, BLUE, (x + cell_width - light_spacing - vehicle_spacing * (i + 1), y + cell_height // 2), vehicle_radius)
                             elif direction == 'west':
-                                pygame.draw.circle(screen, BLACK, (x + i * 10, y + cell_height // 2), 3)
+                                pygame.draw.circle(screen, BLUE, (x + light_spacing + vehicle_spacing * (i + 1), y + cell_height // 2), vehicle_radius)
                         for i in range(num_vehicles_turning):
                             if direction == 'north':
-                                pygame.draw.circle(screen, BLUE, (x + cell_width // 2, y + i * 10), 3)
+                                pygame.draw.circle(screen, YELLOW, (x + cell_width // 2 - vehicle_spacing, y + light_spacing + vehicle_spacing * (i + 1)), vehicle_radius)
                             elif direction == 'south':
-                                pygame.draw.circle(screen, BLUE, (x + cell_width // 2, y + cell_height - i * 10), 3)
+                                pygame.draw.circle(screen, YELLOW, (x + cell_width // 2 + vehicle_spacing, y + cell_height - light_spacing - vehicle_spacing * (i + 1)), vehicle_radius)
                             elif direction == 'east':
-                                pygame.draw.circle(screen, BLUE, (x + cell_width - i * 10, y + cell_height // 2), 3)
+                                pygame.draw.circle(screen, YELLOW, (x + cell_width - light_spacing - vehicle_spacing * (i + 1), y + cell_height // 2 + vehicle_spacing), vehicle_radius)
                             elif direction == 'west':
-                                pygame.draw.circle(screen, BLUE, (x + i * 10, y + cell_height // 2), 3)
+                                pygame.draw.circle(screen, YELLOW, (x + light_spacing + vehicle_spacing * (i + 1), y + cell_height // 2 - vehicle_spacing), vehicle_radius)
+
+                    # Display number of vehicles waiting
+                    text_color = BLACK
+                    text_bg_color = WHITE
+                    text_padding = 5
+                    for direction in ['north', 'south', 'east', 'west']:
+                        num_vehicles_forward = getattr(intersection, f"cars_waiting_{direction}_forward", 0).value
+                        num_vehicles_turning = getattr(intersection, f"cars_waiting_{direction}_turning", 0).value
+                        total_vehicles = num_vehicles_forward + num_vehicles_turning
+                        if total_vehicles > 0:
+                            text = font.render(str(total_vehicles), True, text_color, text_bg_color)
+                            text_rect = text.get_rect()
+                            if direction == 'north':
+                                text_rect.center = (x + cell_width // 2, y + text_padding)
+                            elif direction == 'south':
+                                text_rect.center = (x + cell_width // 2, y + cell_height - text_padding)
+                            elif direction == 'east':
+                                text_rect.center = (x + cell_width - text_padding, y + cell_height // 2)
+                            elif direction == 'west':
+                                text_rect.center = (x + text_padding, y + cell_height // 2)
+                            screen.blit(text, text_rect)
 
             # Update the traffic lights and vehicle positions
-            self.flow_traffic()
+            # self.flow_traffic()
+
             # Update the display
             pygame.display.flip()
+
             # Delay to control the animation speed
-            time.sleep(0.5)
+            time.sleep(1)
 
         pygame.quit()
     
