@@ -131,10 +131,10 @@ def flow_north_to_south_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
     if not self or type(self) is not Intersection:
             return
-    self.north_south_lock.acquire()
     # If there is no north light, return
     if not self.north_light:
         return
+    self.north_south_lock.acquire()
     # If the north forward light is green
     if self.north_light.is_forward_light_green.value and self.cars_waiting_north_forward.value > 0:
         if self.east_light and self.east_light.is_forward_light_green.value or self.west_light and self.west_light.is_forward_light_green.value:
@@ -155,10 +155,10 @@ def flow_south_to_north_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
     if not self or type(self) is not Intersection:
         return
-    self.south_north_lock.acquire()
     # If there is no south light, return
     if not self.south_light:
         return
+    self.south_north_lock.acquire()
     # If the south forward light is green
     if self.south_light.is_forward_light_green.value and self.cars_waiting_south_forward.value > 0:
         if self.east_light and self.east_light.is_forward_light_green.value or self.west_light and self.west_light.is_forward_light_green.value:
@@ -179,10 +179,10 @@ def flow_east_to_west_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
     if not self or type(self) is not Intersection:
         return
-    self.east_west_lock.acquire()
     # If there is no east light, return
     if not self.east_light:
         return
+    self.east_west_lock.acquire()
     # If the east forward light is green
     if self.east_light.is_forward_light_green.value and self.cars_waiting_east_forward.value > 0:
         if self.north_light and self.north_light.is_forward_light_green.value or self.south_light and self.south_light.is_forward_light_green.value:
@@ -203,10 +203,10 @@ def flow_west_to_east_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
     if not self or type(self) is not Intersection:
         return
-    self.west_east_lock.acquire()
     # If there is no west light, return
     if not self.west_light:
         return
+    self.west_east_lock.acquire()
     # If the west forward light is green
     if self.west_light.is_forward_light_green.value and self.cars_waiting_west_forward.value > 0:
         if self.north_light and self.north_light.is_forward_light_green.value or self.south_light and self.south_light.is_forward_light_green.value:
@@ -227,10 +227,10 @@ def flow_north_turning_east_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
     if not self or type(self) is not Intersection:
         return
-    self.north_east_lock.acquire()
     # If there is no north light, return
     if not self.north_light:
         return
+    self.north_east_lock.acquire()
     # If the north turning light is green
     if self.north_light.is_turn_light_green.value and self.cars_waiting_north_turning.value > 0:
         if (self.south_light and self.south_light.is_forward_light_green.value 
@@ -255,10 +255,10 @@ def flow_south_turning_west_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
     if not self or type(self) is not Intersection:
         return
-    self.south_west_lock.acquire()
     # If there is no south light, return
     if not self.south_light:
         return
+    self.south_west_lock.acquire()
     # If the south turning light is green
     if self.south_light.is_turn_light_green.value and self.cars_waiting_south_turning.value > 0:
         if (self.north_light and self.north_light.is_forward_light_green.value 
@@ -283,10 +283,10 @@ def flow_east_turning_south_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
     if not self or type(self) is not Intersection:
         return
-    self.east_south_lock.acquire()
     # If there is no east light, return
     if not self.east_light:
         return
+    self.east_south_lock.acquire()
     # If the east turning light is green
     if self.east_light.is_turn_light_green.value and self.cars_waiting_east_turning.value > 0:
         if (self.north_light and self.north_light.is_forward_light_green.value 
@@ -311,10 +311,10 @@ def flow_west_turning_north_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
     if not self or type(self) is not Intersection:
         return
-    self.west_north_lock.acquire()
     # If there is no west light, return
     if not self.west_light:
         return
+    self.west_north_lock.acquire()
     # If the north turning light is green
     if self.west_light.is_turn_light_green.value and self.cars_waiting_west_turning.value > 0:
         if (self.north_light and self.north_light.is_forward_light_green.value 

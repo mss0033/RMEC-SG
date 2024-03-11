@@ -59,8 +59,8 @@ class City:
 
     def visualize_traffic(self, iterations):
         pygame.init()
-        screen_width = 800
-        screen_height = 600
+        screen_width = 1600
+        screen_height = 1200
         screen = pygame.display.set_mode((screen_width, screen_height))
         pygame.display.set_caption("Traffic Simulation")
 
