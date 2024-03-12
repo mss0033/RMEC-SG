@@ -1,6 +1,4 @@
-import multiprocessing
 import random
-from multiprocessing import Value, Lock
 from traffic_light_indiv import Traffic_light
 from traffic_light_indiv import generate_new_traffic_light
 # Defines the intersection class
@@ -18,29 +16,24 @@ class Intersection:
     east_neighbor = None
     west_neighbor = None
     # Total throughput of the intersection in terms of number of cars passing through per minute
-    cars_per_minute = Value('i', 0)
+    cars_per_minute = 0
     # Number of cars waiting at all lights during at the intersection
-    cars_waiting_north_forward = Value('i', random.randint(0, 1))
-    cars_waiting_north_turning = Value('i', random.randint(0, 1))
-    cars_waiting_south_forward = Value('i', random.randint(0, 1))
-    cars_waiting_south_turning = Value('i', random.randint(0, 1))
-    cars_waiting_east_forward = Value('i', random.randint(0, 1))
-    cars_waiting_east_turning = Value('i', random.randint(0, 1))
-    cars_waiting_west_forward = Value('i', random.randint(0, 1))
-    cars_waiting_west_turning = Value('i', random.randint(0, 1))
+    cars_waiting_north_forward = []
+    cars_waiting_north_turning = []
+    cars_waiting_south_forward = []
+    cars_waiting_south_turning = []
+    cars_waiting_east_forward = []
+    cars_waiting_east_turning = []
+    cars_waiting_west_forward = []
+    cars_waiting_west_turning = []
     # Boolean signal if a crash was detected
-    collision_occured = Value('b', False)
-    # threading lock
-    north_south_lock = Lock()
-    south_north_lock = Lock()
-    east_west_lock = Lock()
-    west_east_lock = Lock()
-    north_east_lock = Lock()
-    south_west_lock = Lock()
-    east_south_lock = Lock()
-    west_north_lock = Lock()
+    collision_occured = False
 
-    def __init__(self):
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
         self.north_light = None
         self.south_light = None
         self.east_light = None
@@ -74,6 +67,39 @@ class Intersection:
                 self.west_neighbor = neighbor
                 if not self.west_light:
                     self.west_light = generate_new_traffic_light()
+
+    def add_cars(self, min_num_cars: 'int', max_num_cars: 'int'):
+        for i in range(random.randint(min_num_cars, max_num_cars)):
+            self.add_car(direction=random.choice(['north', 'south', 'east', 'west']), turning=random.choice([True, False]))
+
+    def add_car(self, direction: str, turning: bool):
+        x = 0
+        y = 0
+        if direction == 'north':
+            x = self.x + self.width // 2
+            y = self.y
+        elif direction == 'south':
+            x = self.x + self.width // 2
+            y = self.y + self.height
+        elif direction == 'east':
+            x = self.x + self.width
+            y = self.y + self.height // 2
+        elif direction == 'west':
+            x = self.x
+            y = self.y + self.height // 2
+
+        car = {'position': (x, y), 'new_position': (x, y)}
+        if turning:
+            getattr(self, f"cars_waiting_{direction}_turning").append(car)
+        else:
+            getattr(self, f"cars_waiting_{direction}_forward").append(car)
+
+    def update_car_positions(self):
+        for direction in ['north', 'south', 'east', 'west']:
+            for car in getattr(self, f"cars_waiting_{direction}_forward"):
+                car['position'] = car['new_position']
+            for car in getattr(self, f"cars_waiting_{direction}_turning"):
+                car['position'] = car['new_position']
             
     def flow_traffic(self, iteration: 'int'):
         # Update the light states before moving cars
@@ -100,31 +126,31 @@ class Intersection:
         status = f"Intersection Status:\n"
         # North Light
         if self.north_light:
-            status += f"  North Light: Forward: {'Green' if self.north_light.is_forward_light_green.value else 'Red'}, Turning: {'Green' if self.north_light.is_turn_light_green.value else 'Red'}\n"
+            status += f"  North Light: Forward: {'Green' if self.north_light.is_forward_light_green else 'Red'}, Turning: {'Green' if self.north_light.is_turn_light_green else 'Red'}\n"
         else:
             status += f"  Noth light: NA\n"
         # South Light
         if self.south_light:
-            status += f"  South Light: Forward: {'Green' if self.south_light.is_forward_light_green.value else 'Red'}, Turning: {'Green' if self.south_light.is_turn_light_green.value else 'Red'}\n"
+            status += f"  South Light: Forward: {'Green' if self.south_light.is_forward_light_green else 'Red'}, Turning: {'Green' if self.south_light.is_turn_light_green else 'Red'}\n"
         else:
             status += f"  South light: NA\n"
         # East Light
         if self.east_light:
-            status += f"  East Light: Forward: {'Green' if self.east_light.is_forward_light_green.value else 'Red'}, Turning: {'Green' if self.east_light.is_turn_light_green.value else 'Red'}\n"
+            status += f"  East Light: Forward: {'Green' if self.east_light.is_forward_light_green else 'Red'}, Turning: {'Green' if self.east_light.is_turn_light_green else 'Red'}\n"
         else:
             status += f"  East light: NA\n"
         # West Light
         if self.west_light:
-            status += f"  West Light: Forward: {'Green' if self.west_light.is_forward_light_green.value else 'Red'}, Turning: {'Green' if self.west_light.is_turn_light_green.value else 'Red'}\n"
+            status += f"  West Light: Forward: {'Green' if self.west_light.is_forward_light_green else 'Red'}, Turning: {'Green' if self.west_light.is_turn_light_green else 'Red'}\n"
         else:
             status += f"  West light: NA\n"
         status += f"  Cars Waiting:\n"
-        status += f"    North: {self.cars_waiting_north_forward.value} forward, {self.cars_waiting_north_turning.value} turning\n"
-        status += f"    South: {self.cars_waiting_south_forward.value} forward, {self.cars_waiting_south_turning.value} turning\n"
-        status += f"    East: {self.cars_waiting_east_forward.value} forward, {self.cars_waiting_east_turning.value} turning\n"
-        status += f"    West: {self.cars_waiting_west_forward.value} forward, {self.cars_waiting_west_turning.value} turning\n"
-        status += f"  Cars per Minute: {self.cars_per_minute.value}\n"
-        status += f"  Collision Occurred: {self.collision_occured.value}\n"
+        status += f"    North: {self.cars_waiting_north_forward} forward, {self.cars_waiting_north_turning} turning\n"
+        status += f"    South: {self.cars_waiting_south_forward} forward, {self.cars_waiting_south_turning} turning\n"
+        status += f"    East: {self.cars_waiting_east_forward} forward, {self.cars_waiting_east_turning} turning\n"
+        status += f"    West: {self.cars_waiting_west_forward} forward, {self.cars_waiting_west_turning} turning\n"
+        status += f"  Cars per Minute: {self.cars_per_minute}\n"
+        status += f"  Collision Occurred: {self.collision_occured}\n"
         return status
     
 def flow_north_to_south_traffic(self: 'Intersection'):
@@ -134,22 +160,20 @@ def flow_north_to_south_traffic(self: 'Intersection'):
     # If there is no north light, return
     if not self.north_light:
         return
-    self.north_south_lock.acquire()
     # If the north forward light is green
-    if self.north_light.is_forward_light_green.value and self.cars_waiting_north_forward.value > 0:
-        if self.east_light and self.east_light.is_forward_light_green.value or self.west_light and self.west_light.is_forward_light_green.value:
+    if self.north_light.is_forward_light_green and len(self.cars_waiting_north_forward) > 0:
+        if self.east_light and self.east_light.is_forward_light_green or self.west_light and self.west_light.is_forward_light_green:
             # Indicate collision
-            self.collision_occured.value = True
+            self.collision_occured = True
             # return
 
         # Move cars waiting at the north light to the south neighbor
-        self.cars_waiting_north_forward.value -= 1
+        car = self.cars_waiting_north_forward.pop(0)
         if self.south_neighbor:
             if random.choice([0, 1]) == 1:
-                self.south_neighbor.cars_waiting_north_forward.value += 1
+                self.south_neighbor.cars_waiting_north_forward.append(car)
             else:
-                self.south_neighbor.cars_waiting_north_turning.value += 1
-    self.north_south_lock.release()
+                self.south_neighbor.cars_waiting_north_turning.append(car)
 
 def flow_south_to_north_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
@@ -158,22 +182,20 @@ def flow_south_to_north_traffic(self: 'Intersection'):
     # If there is no south light, return
     if not self.south_light:
         return
-    self.south_north_lock.acquire()
     # If the south forward light is green
-    if self.south_light.is_forward_light_green.value and self.cars_waiting_south_forward.value > 0:
-        if self.east_light and self.east_light.is_forward_light_green.value or self.west_light and self.west_light.is_forward_light_green.value:
+    if self.south_light.is_forward_light_green and len(self.cars_waiting_south_forward) > 0:
+        if self.east_light and self.east_light.is_forward_light_green or self.west_light and self.west_light.is_forward_light_green:
             # Indicate collision
-            self.collision_occured.value = True
+            self.collision_occured = True
             # return
 
         # Move cars waiting at the south light to the north neighbor
-        self.cars_waiting_south_forward.value -= 1
+        car = self.cars_waiting_south_forward.pop(0)
         if self.north_neighbor:
             if random.choice([0, 1]) == 1:
-                self.north_neighbor.cars_waiting_south_forward.value += 1
+                self.north_neighbor.cars_waiting_south_forward.append(car)
             else:
-                self.north_neighbor.cars_waiting_south_turning.value += 1
-    self.south_north_lock.release()
+                self.north_neighbor.cars_waiting_south_turning.append(car)
 
 def flow_east_to_west_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
@@ -182,22 +204,20 @@ def flow_east_to_west_traffic(self: 'Intersection'):
     # If there is no east light, return
     if not self.east_light:
         return
-    self.east_west_lock.acquire()
     # If the east forward light is green
-    if self.east_light.is_forward_light_green.value and self.cars_waiting_east_forward.value > 0:
-        if self.north_light and self.north_light.is_forward_light_green.value or self.south_light and self.south_light.is_forward_light_green.value:
+    if self.east_light.is_forward_light_green and len(self.cars_waiting_east_forward) > 0:
+        if self.north_light and self.north_light.is_forward_light_green or self.south_light and self.south_light.is_forward_light_green:
             # Indicate collision
-            self.collision_occured.value = True
+            self.collision_occured = True
             # return
 
         # Move cars waiting at the east light to the west neighbor
-        self.cars_waiting_east_forward.value -= 1
+        car = self.cars_waiting_east_forward.pop(0)
         if self.west_neighbor:
             if random.choice([0, 1]) == 1:
-                self.west_neighbor.cars_waiting_east_forward.value += 1
+                self.west_neighbor.cars_waiting_east_forward.append(car)
             else:
-                self.west_neighbor.cars_waiting_east_turning.value += 1
-    self.east_west_lock.release()
+                self.west_neighbor.cars_waiting_east_turning.append(car)
 
 def flow_west_to_east_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
@@ -206,22 +226,20 @@ def flow_west_to_east_traffic(self: 'Intersection'):
     # If there is no west light, return
     if not self.west_light:
         return
-    self.west_east_lock.acquire()
     # If the west forward light is green
-    if self.west_light.is_forward_light_green.value and self.cars_waiting_west_forward.value > 0:
-        if self.north_light and self.north_light.is_forward_light_green.value or self.south_light and self.south_light.is_forward_light_green.value:
+    if self.west_light.is_forward_light_green and len(self.cars_waiting_west_forward) > 0:
+        if self.north_light and self.north_light.is_forward_light_green or self.south_light and self.south_light.is_forward_light_green:
             # Indicate collision
-            self.collision_occured.value = True
+            self.collision_occured = True
             # return
 
         # Move cars waiting at the east light to the west neighbor
-        self.cars_waiting_west_forward.value -= 1
+        car = self.cars_waiting_west_forward.pop(0)
         if self.east_neighbor:
             if random.choice([0, 1]) == 1:
-                self.east_neighbor.cars_waiting_west_forward.value += 1
+                self.east_neighbor.cars_waiting_west_forward.append(car)
             else:
-                self.east_neighbor.cars_waiting_west_turning.value += 1
-    self.west_east_lock.release()
+                self.east_neighbor.cars_waiting_west_turning.append(car)
 
 def flow_north_turning_east_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
@@ -230,26 +248,24 @@ def flow_north_turning_east_traffic(self: 'Intersection'):
     # If there is no north light, return
     if not self.north_light:
         return
-    self.north_east_lock.acquire()
     # If the north turning light is green
-    if self.north_light.is_turn_light_green.value and self.cars_waiting_north_turning.value > 0:
-        if (self.south_light and self.south_light.is_forward_light_green.value 
-            or self.east_light and self.east_light.is_forward_light_green.value 
-            or self.east_light and self.east_light.is_turn_light_green.value 
-            or self.west_light and self.west_light.is_forward_light_green.value 
-            or self.west_light and self.west_light.is_turn_light_green.value):
+    if self.north_light.is_turn_light_green and len(self.cars_waiting_north_turning) > 0:
+        if (self.south_light and self.south_light.is_forward_light_green 
+            or self.east_light and self.east_light.is_forward_light_green 
+            or self.east_light and self.east_light.is_turn_light_green 
+            or self.west_light and self.west_light.is_forward_light_green 
+            or self.west_light and self.west_light.is_turn_light_green):
             # Indicate collision
-            self.collision_occured.value = True
+            self.collision_occured = True
             # return
 
         # Move cars waiting at the south turning lane to the east or west neighbor
-        self.cars_waiting_north_turning.value -= 1
+        car = self.cars_waiting_north_turning.pop(0)
         if self.east_neighbor:
             if random.choice([0, 1]) == 1:
-                self.east_neighbor.cars_waiting_west_forward.value += 1
+                self.east_neighbor.cars_waiting_west_forward.append(car)
             else:
-                self.east_neighbor.cars_waiting_west_turning.value += 1
-    self.north_east_lock.release()
+                self.east_neighbor.cars_waiting_west_turning.append(car)
 
 def flow_south_turning_west_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
@@ -258,26 +274,24 @@ def flow_south_turning_west_traffic(self: 'Intersection'):
     # If there is no south light, return
     if not self.south_light:
         return
-    self.south_west_lock.acquire()
     # If the south turning light is green
-    if self.south_light.is_turn_light_green.value and self.cars_waiting_south_turning.value > 0:
-        if (self.north_light and self.north_light.is_forward_light_green.value 
-            or self.east_light and self.east_light.is_forward_light_green.value 
-            or self.east_light and self.east_light.is_turn_light_green.value 
-            or self.west_light and self.west_light.is_forward_light_green.value 
-            or self.west_light and self.west_light.is_turn_light_green.value):
+    if self.south_light.is_turn_light_green and len(self.cars_waiting_south_turning) > 0:
+        if (self.north_light and self.north_light.is_forward_light_green 
+            or self.east_light and self.east_light.is_forward_light_green 
+            or self.east_light and self.east_light.is_turn_light_green 
+            or self.west_light and self.west_light.is_forward_light_green 
+            or self.west_light and self.west_light.is_turn_light_green):
             # Indicate collision
-            self.collision_occured.value = True
+            self.collision_occured = True
             # return
 
         # Move cars waiting at the south turning lane to the east or west neighbor
-        self.cars_waiting_south_turning.value -= 1
+        car = self.cars_waiting_south_turning.pop(0)
         if self.west_neighbor:
             if random.choice([0, 1]) == 1:
-                self.west_neighbor.cars_waiting_east_forward.value += 1
+                self.west_neighbor.cars_waiting_east_forward.append(car)
             else:
-                self.west_neighbor.cars_waiting_east_turning.value += 1
-    self.south_west_lock.release()
+                self.west_neighbor.cars_waiting_east_turning.append(car)
 
 def flow_east_turning_south_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
@@ -286,26 +300,24 @@ def flow_east_turning_south_traffic(self: 'Intersection'):
     # If there is no east light, return
     if not self.east_light:
         return
-    self.east_south_lock.acquire()
     # If the east turning light is green
-    if self.east_light.is_turn_light_green.value and self.cars_waiting_east_turning.value > 0:
-        if (self.north_light and self.north_light.is_forward_light_green.value 
-            or self.north_light and self.north_light.is_turn_light_green.value 
-            or self.south_light and self.south_light.is_forward_light_green.value 
-            or self.south_light and self.south_light.is_turn_light_green.value 
-            or self.west_light and self.west_light.is_forward_light_green.value):
+    if self.east_light.is_turn_light_green and len(self.cars_waiting_east_turning) > 0:
+        if (self.north_light and self.north_light.is_forward_light_green 
+            or self.north_light and self.north_light.is_turn_light_green 
+            or self.south_light and self.south_light.is_forward_light_green 
+            or self.south_light and self.south_light.is_turn_light_green 
+            or self.west_light and self.west_light.is_forward_light_green):
             # Indicate collision
-            self.collision_occured.value = True
+            self.collision_occured = True
             # return
 
         # Move cars waiting at the south turning lane to the east or west neighbor
-        self.cars_waiting_east_turning.value -= 1
+        car = self.cars_waiting_east_turning.pop(0)
         if self.south_neighbor:
             if random.choice([0, 1]) == 1:
-                self.south_neighbor.cars_waiting_north_forward.value += 1
+                self.south_neighbor.cars_waiting_north_forward.append(car)
             else:
-                self.south_neighbor.cars_waiting_north_turning.value += 1
-    self.east_south_lock.release()
+                self.south_neighbor.cars_waiting_north_turning.append(car)
 
 def flow_west_turning_north_traffic(self: 'Intersection'):
     # If the intersection is None or whatever is passed in is not an Intersection, return
@@ -314,23 +326,21 @@ def flow_west_turning_north_traffic(self: 'Intersection'):
     # If there is no west light, return
     if not self.west_light:
         return
-    self.west_north_lock.acquire()
     # If the north turning light is green
-    if self.west_light.is_turn_light_green.value and self.cars_waiting_west_turning.value > 0:
-        if (self.north_light and self.north_light.is_forward_light_green.value 
-            or self.north_light and self.north_light.is_turn_light_green.value 
-            or self.south_light and self.south_light.is_forward_light_green.value 
-            or self.south_light and self.south_light.is_turn_light_green.value 
-            or self.east_light and self.west_light.is_forward_light_green.value):
+    if self.west_light.is_turn_light_green and len(self.cars_waiting_west_turning) > 0:
+        if (self.north_light and self.north_light.is_forward_light_green 
+            or self.north_light and self.north_light.is_turn_light_green 
+            or self.south_light and self.south_light.is_forward_light_green 
+            or self.south_light and self.south_light.is_turn_light_green 
+            or self.east_light and self.west_light.is_forward_light_green):
             # Indicate collision
-            self.collision_occured.value = True
+            self.collision_occured = True
             # return
 
         # Move cars waiting at the south turning lane to the east or west neighbor
-        self.cars_waiting_west_turning.value -= 1
+        car = self.cars_waiting_west_turning.pop(0)
         if self.north_neighbor:
             if random.choice([0, 1]) == 1:
-                self.north_neighbor.cars_waiting_south_forward.value += 1
+                self.north_neighbor.cars_waiting_south_forward.append(car)
             else:
-                self.north_neighbor.cars_waiting_south_turning.value += 1
-    self.west_north_lock.release()
+                self.north_neighbor.cars_waiting_south_turning.append(car)
