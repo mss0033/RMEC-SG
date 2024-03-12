@@ -73,22 +73,22 @@ class Intersection:
             self.add_car(direction=random.choice(['north', 'south', 'east', 'west']), turning=random.choice([True, False]))
 
     def add_car(self, direction: str, turning: bool):
-        x = 0
-        y = 0
+        car_width = 10
+        car_height = 20
         if direction == 'north':
-            x = self.x + self.width // 2
-            y = self.y
+            x = self.x + self.width // 2 - car_width // 2
+            y = self.y - car_height
         elif direction == 'south':
-            x = self.x + self.width // 2
+            x = self.x + self.width // 2 - car_width // 2
             y = self.y + self.height
         elif direction == 'east':
             x = self.x + self.width
-            y = self.y + self.height // 2
+            y = self.y + self.height // 2 - car_height // 2
         elif direction == 'west':
-            x = self.x
-            y = self.y + self.height // 2
+            x = self.x - car_width
+            y = self.y + self.height // 2 - car_height // 2
 
-        car = {'position': (x, y), 'new_position': (x, y)}
+        car = {'position': (x, y), 'new_position': (x, y), 'direction': direction, 'turning': turning}
         if turning:
             getattr(self, f"cars_waiting_{direction}_turning").append(car)
         else:

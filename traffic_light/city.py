@@ -107,7 +107,8 @@ class City:
             # print(intersection)
 
             # Animate car transitions
-            for _ in range(10):  # Adjust the number of transition steps
+            total_transition_steps=60
+            for transition_step in range(total_transition_steps):  # Adjust the number of transition steps
                 screen.fill(WHITE)
                 # Draw roads
                 for row in range(self.num_rows):
@@ -122,7 +123,7 @@ class City:
                 # Draw intersections and animate car transitions
                 for (row, col), intersection in self.intersections.items():
                     self.draw_intersections(screen, intersection, font, row, col)
-                    self.animate_car_transitions(screen, intersection)
+                    self.animate_car_transitions(screen, intersection, transition_step, total_transition_steps)
 
                 pygame.display.flip()
                 time.sleep(0.1)  # Adjust the transition speed
@@ -193,24 +194,32 @@ class City:
         text_color = BLACK
         text_bg_color = WHITE
         text_padding = 5
+        car_width = 10
+        car_height = 20
+        car_color_forward = (255, 0, 0)  # Red
+        car_color_turning = (0, 0, 255)  # Blue
+
         for direction in ['north', 'south', 'east', 'west']:
-            num_vehicles_forward = len(getattr(intersection, f"cars_waiting_{direction}_forward", []))
-            num_vehicles_turning = len(getattr(intersection, f"cars_waiting_{direction}_turning", []))
-            total_vehicles = num_vehicles_forward + num_vehicles_turning
-            if total_vehicles > 0:
-                text = font.render(str(total_vehicles), True, text_color, text_bg_color)
-                text_rect = text.get_rect()
-                if direction == 'north':
-                    text_rect.center = (x + self.cell_width // 2, y + text_padding)
-                elif direction == 'south':
-                    text_rect.center = (x + self.cell_width // 2, y + self.cell_height - text_padding)
-                elif direction == 'east':
-                    text_rect.center = (x + self.cell_width - text_padding, y + self.cell_height // 2)
-                elif direction == 'west':
-                    text_rect.center = (x + text_padding, y + self.cell_height // 2)
-                screen.blit(text, text_rect)
+            cars_forward = getattr(intersection, f"cars_waiting_{direction}_forward")
+            cars_turning = getattr(intersection, f"cars_waiting_{direction}_turning")
+
+            for i, car in enumerate(cars_forward):
+                x, y = car['position']
+                x = max(x, intersection.x)  # Ensure car stays within intersection bounds
+                x = min(x, intersection.x + intersection.width - car_width)
+                y = max(y, intersection.y)  # Ensure car stays within intersection bounds
+                y = min(y, intersection.y + intersection.height - car_height)
+                pygame.draw.rect(screen, car_color_forward, (x, y, car_width, car_height))
+
+            for i, car in enumerate(cars_turning):
+                x, y = car['position']
+                x = max(x, intersection.x)  # Ensure car stays within intersection bounds
+                x = min(x, intersection.x + intersection.width - car_width)
+                y = max(y, intersection.y)  # Ensure car stays within intersection bounds
+                y = min(y, intersection.y + intersection.height - car_height)
+                pygame.draw.rect(screen, car_color_turning, (x, y, car_width, car_height))
     
-    def animate_car_transitions(self, screen, intersection):
+    def animate_car_transitions(self, screen, intersection, transition_step, total_transition_steps):
         # Define car dimensions and colors
         car_width = 10
         car_height = 20
@@ -228,34 +237,75 @@ class City:
 
                 # Calculate the intermediate position of the car during the transition
                 transition_pos = (
-                    start_pos[0] + (end_pos[0] - start_pos[0]) * 0.2,  # Adjust the transition speed
-                    start_pos[1] + (end_pos[1] - start_pos[1]) * 0.2   # Adjust the transition speed
+                    start_pos[0] + (end_pos[0] - start_pos[0]) * transition_step / total_transition_steps,  # Adjust the transition speed
+                    start_pos[1] + (end_pos[1] - start_pos[1]) * transition_step / total_transition_steps   # Adjust the transition speed
                 )
+
+                # Check for collision with other cars
+                for other_car in cars_forward + cars_turning:
+                    if car != other_car:
+                        if self.check_collision(car, other_car):
+                            # Resolve collision (e.g., adjust car positions)
+                            self.resolve_collision(car, other_car)
 
                 # Update the new position of the car based on its direction and turning status
                 if direction == 'north':
-                    if car in cars_turning:
-                        car['new_position'] = (intersection.x + intersection.width, intersection.y + intersection.height // 2)
+                    if car['turning']:
+                        car['new_position'] = (intersection.x + intersection.width, intersection.y + intersection.height // 2 - car_height // 2)
                     else:
-                        car['new_position'] = (intersection.x + intersection.width // 2, intersection.y - car_height)
+                        car['new_position'] = (intersection.x + intersection.width // 2 - car_width // 2, intersection.y - car_height)
                 elif direction == 'south':
-                    if car in cars_turning:
-                        car['new_position'] = (intersection.x, intersection.y + intersection.height // 2)
+                    if car['turning']:
+                        car['new_position'] = (intersection.x - car_width, intersection.y + intersection.height // 2 - car_height // 2)
                     else:
-                        car['new_position'] = (intersection.x + intersection.width // 2, intersection.y + intersection.height)
+                        car['new_position'] = (intersection.x + intersection.width // 2 - car_width // 2, intersection.y + intersection.height)
                 elif direction == 'east':
-                    if car in cars_turning:
-                        car['new_position'] = (intersection.x + intersection.width // 2, intersection.y)
+                    if car['turning']:
+                        car['new_position'] = (intersection.x + intersection.width // 2 - car_width // 2, intersection.y - car_height)
                     else:
-                        car['new_position'] = (intersection.x + intersection.width, intersection.y + intersection.height // 2)
+                        car['new_position'] = (intersection.x + intersection.width, intersection.y + intersection.height // 2 - car_height // 2)
                 elif direction == 'west':
-                    if car in cars_turning:
-                        car['new_position'] = (intersection.x + intersection.width // 2, intersection.y + intersection.height)
+                    if car['turning']:
+                        car['new_position'] = (intersection.x + intersection.width // 2 - car_width // 2, intersection.y + intersection.height)
                     else:
-                        car['new_position'] = (intersection.x - car_width, intersection.y + intersection.height // 2)
+                        car['new_position'] = (intersection.x - car_width, intersection.y + intersection.height // 2 - car_height // 2)
 
                 # Draw the car at the intermediate position
                 pygame.draw.rect(screen, car_color, (transition_pos[0], transition_pos[1], car_width, car_height))
+    
+    
+    def check_collision(self, car1, car2):
+        # Get the positions of the cars
+        x1, y1 = car1['position']
+        x2, y2 = car2['position']
+
+        # Define the collision threshold
+        collision_threshold = 5
+
+        # Check if the cars are colliding
+        if abs(x1 - x2) < collision_threshold and abs(y1 - y2) < collision_threshold:
+            return True
+        return False
+
+    def resolve_collision(self, car1, car2):
+        # Adjust the positions of the colliding cars
+        x1, y1 = car1['position']
+        x2, y2 = car2['position']
+
+        # Calculate the direction vector between the cars
+        dx = x2 - x1
+        dy = y2 - y1
+
+        # Normalize the direction vector
+        length = (dx ** 2 + dy ** 2) ** 0.5
+        if length != 0:
+            dx /= length
+            dy /= length
+
+        # Move the cars away from each other
+        offset = 5
+        car1['position'] = (x1 - dx * offset, y1 - dy * offset)
+        car2['position'] = (x2 + dx * offset, y2 + dy * offset)
     
     def print_city(self):
         num_rows = len(self.city_config)
