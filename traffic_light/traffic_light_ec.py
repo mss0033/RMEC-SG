@@ -1,172 +1,237 @@
+import datetime
+import libsumo as traci
 import random
-import matplotlib.pyplot as plt
-import numpy as np
-from city import City
-from city import generate_city_configuration
+import traci.constants as tc
 
-# Parameters
-population_size = 50
-num_intersections = 5
-max_light_duration = 120
-min_light_duration = 10
-initial_mutation_rate = 0.1
-num_generations = 100
-vehicles_per_minute = [15, 25, 20, 30, 10]  # Variable traffic flow at different intersections
-elite_size = 5  # Number of best individuals to preserve in each generation
-simulation_duration = 60 * 60  # Simulation duration in seconds (1 hour)
-interval_duration = 60  # Duration of each time interval in seconds
+from copy import deepcopy
+from math import log
+from multiprocessing import Manager, Process
+from parse_traffic_light_logic_xml import parse_tl_logic, write_tl_logic
+from statistics import mean, stdev
+from time import time
+from tllogic_indiv import TLLogic
+from tllogic_set import TLLogicSet
+from typing import List
 
-seed = 42
-num_rows = 10
-num_cols = 10
-complexity = 20
+# Number of concurrent simulations to run
+NUM_SIMS = 24
 
-city_config = generate_city_configuration(seed, num_rows, num_cols, complexity)
-city_config = [[1 for x in range(5)] for y in range(5)]
-print(city_config)
-city = City(city_config)
-num_iterations = 6000
-city.visualize_traffic(num_iterations)
+# Sumo commands
+SUMO_BINARY = "/usr/bin/sumo"
+SUMO_ROUTE = "traffic_light/route_configs/grid_network_0_routes_stairstep.rou.xml"
+SUMO_CMD = [SUMO_BINARY, "-r", SUMO_ROUTE, "--no-warnings", "true"]
 
-# # Initialize population
-# def initialize_population():
-#     return [[random.randint(min_light_duration, max_light_duration) for _ in range(num_intersections)] for _ in range(population_size)]
+# Evolutionary algorithm parameters
+population_size = 100
+tournament_size = 20
+mutation_rate = 0.25
+recombination_rate = 0.7
+num_generations = 50
 
-# # Enhanced fitness evaluation
-# def evaluate_fitness(individual):
-#     total_throughput = 0
-#     total_waiting_time = 0
-#     num_intervals = simulation_duration // interval_duration
+# Read in the original network file with decent traffic light phases
+xml_file = 'traffic_light/network_configs/grid_network_original.net.xml'
+with open(xml_file, 'r') as file:
+    xml_string = file.read()
+
+# Create an original logic set from which futher sets will be born
+if xml_string:
+    original_set = TLLogicSet(tllogics=parse_tl_logic(xml_string))
+    # print(test_set)
+
+# Randomizes the phases of a given TLLogic object
+def apply_entropy_to_tllogic(tllogic: 'TLLogic'):
+    # for phase in tllogic.phases:
+        # phase.apply_entropy()
+    return tllogic
+
+# Create traffic light logic sets from the original
+def create_tllogic_set_from_template(template_tllogic_set: 'TLLogicSet'):
+    tllogics = []
+    for tllogic in template_tllogic_set.tllogics:
+        new_tllogic = deepcopy(tllogic)
+        # apply_entropy_to_tllogic(new_tllogic)
+        tllogics.append(new_tllogic)
+    return TLLogicSet(tllogics)
+
+# Method used to initialize the population
+def initialize_population(population_size: 'int', template_tllogics: 'TLLogicSet'):
+    population = []
+    for _ in range(population_size):
+        tllogic_set = create_tllogic_set_from_template(template_tllogics)
+        population.append(tllogic_set)
+
+    # Write the population to the config files
+    for id, indiv in enumerate(population):
+        updated_xml_string = write_tl_logic(xml_string, indiv.tllogics)
+        with open(f"traffic_light/network_configs/grid_network_{id}_modified.net.xml", 'w') as file:
+            file.write(updated_xml_string)
+        # print(f"{indiv}")
+    return population
+
+# Method used to initialize the population from existing network files
+def initialize_population_from_exiting(population_size: 'int'):
+    population = []
+    # Read in the original network file with decent traffic light phases
+    for i in range(population_size):
+        with open(f"traffic_light/network_configs/grid_network_{i}_modified.net.xml", 'r') as file:
+            xml_string = file.read()
+
+        # Create an original logic set from which futher sets will be born
+        if xml_string:
+            population.append(TLLogicSet(tllogics=parse_tl_logic(xml_string)))
+
+    return population
+
+# Only take the top % of individuals
+def max_fitness_selection(population: List[TLLogicSet]):
+    population.sort(key=lambda x: x.fitness)
+    return population[:population_size // 3]
+
+def tournament_selection(population: List['TLLogicSet'], tournament_size: 'int') -> List['TLLogicSet']:
+    selected_individuals = []
+    for _ in range(len(population)):
+        tournament = random.sample(population, tournament_size)
+        best_individual = min(tournament, key=lambda x: x.fitness)
+        selected_individuals.append(deepcopy(best_individual))
+    return selected_individuals
+
+def run_simulation(index: 'int', return_dict: dict):
+    # Start SUMO simulation
+    traci.start(SUMO_CMD + ["-n", f"traffic_light/network_configs/grid_network_{index}_modified.net.xml"], label=f"{index}")
+    # Get the step length
+    # stepLength = traci.simulation.getDeltaT()
+    # # Get the junction IDs
+    # junctionID = traci.junction.getIDList()[traci.junction.getIDCount()//2]
+    # # Subscribe to each junction
+    # traci.junction.subscribeContext(
+    #         junctionID, tc.CMD_GET_VEHICLE_VARIABLE, 1000000,
+    #         [tc.VAR_SPEED, tc.VAR_ALLOWED_SPEED]
+    # )
+    # Initialize the fitness for the index
+    return_dict[index] = 0
+    # start_time = time()
+    while traci.simulation.getMinExpectedNumber() > 0:
+    # num_steps = 0
+    # while num_steps < 1_000:
+        # num_steps += 1
+        # Step the sim
+        traci.simulationStep()
+        # # For each junction
+        # # Get the junction stats
+        # scResults = traci.junction.getContextSubscriptionResults(junctionID)
+        # halting = 0
+        # if scResults:
+        #     relSpeeds = [d[tc.VAR_SPEED] / d[tc.VAR_ALLOWED_SPEED] for d in scResults.values()]
+        #     # compute values corresponding to summary-output
+        #     running = len(relSpeeds)
+        #     halting = len([1 for d in scResults.values() if d[tc.VAR_SPEED] < 0.1])
+        #     meanSpeedRelative = sum(relSpeeds) / running
+        #     timeLoss = (1 - meanSpeedRelative) * running * stepLength
+        #     # print(f"Sim time: {traci.simulation.getTime()}, timeloss: {timeLoss}, haulting: {halting}")
+        #     if (timeLoss + halting <= 0):
+        #         return_dict[index] += 0
+        #     else:
+        #         return_dict[index] += log(timeLoss + halting)
+
+    # Calculate fitness based on how long the simulation took
+    return_dict[index] = traci.simulation.getTime()
+    # Close SUMO simulation
+    traci.close()
+
+# Facilitate multiprocessing of inidividuals
+def evaluate_population(population: List[TLLogicSet]):
+    manager = Manager()
+    return_dict = manager.dict()
+    # for (index, indiv) in enumerate(population):
+    #     run_simulation(index=index, return_dict=return_dict)
+    processes = []
+    for (index, indiv) in enumerate(population):
+        process = Process(target=run_simulation, args=(index, return_dict))
+        processes.append(process)
+        process.start()
     
-#     for i in range(num_intersections):
-#         green_time_remaining = individual[i]
-#         for _ in range(num_intervals):
-#             # Simulate arrival of vehicles
-#             arrivals = np.random.poisson(vehicles_per_minute[i] * (interval_duration / 60))
-            
-#             if green_time_remaining > 0:
-#                 # Vehicles pass through if the light is green
-#                 vehicles_passed = min(arrivals, green_time_remaining)
-#                 total_throughput += vehicles_passed
-#                 green_time_remaining -= vehicles_passed
-#             else:
-#                 # Vehicles queue up if the light is red
-#                 total_waiting_time += arrivals * (sum(individual) - individual[i])
-            
-#             # Reset green time after a full cycle
-#             if green_time_remaining <= 0:
-#                 green_time_remaining = sum(individual) - individual[i]
-    
-#     # Use a more nuanced fitness calculation
-#     fitness = total_throughput - np.log(1 + total_waiting_time)
-#     return fitness
+    for process in processes:
+        process.join()
 
-# # Improved selection mechanism
-# def tournament_selection(population, fitnesses, k=3):
-#     selected_indices = np.random.choice(range(len(population)), k, replace=False)
-#     best_index = selected_indices[0]
-#     for index in selected_indices[1:]:
-#         if fitnesses[index] > fitnesses[best_index]:
-#             best_index = index
-#     return population[best_index]
+    for (key, value) in return_dict.items():
+        population[key].fitness = value
 
-# # Crossover
-# def crossover(parent1, parent2):
-#     crossover_point = random.randint(1, num_intersections-1)
-#     child1 = parent1[:crossover_point] + parent2[crossover_point:]
-#     child2 = parent2[:crossover_point] + parent1[crossover_point:]
-#     return child1, child2
+def evolutionary_algorithm():
+    # Initialize population
+    # population = initialize_population(population_size, template_tllogics=original_set)
+    population = initialize_population_from_exiting(population_size=population_size)
+    # Evaluate fitness of each individual
+    evaluate_population(population)
 
-# # Mutation with dynamic rate
-# def mutate(individual, mutation_rate):
-#     for i in range(num_intersections):
-#         if random.random() < mutation_rate:
-#             individual[i] = random.randint(min_light_duration, max_light_duration)
-#     return individual
+    for generation in range(num_generations):
+        print(f"Generation {generation + 1}")
 
-# # Dynamic mutation rate
-# def adjust_mutation_rate(generation):
-#     return initial_mutation_rate * (1 - (generation / num_generations))
+        # Tournament selection
+        selected_individuals = tournament_selection(population, tournament_size)
+        # Maximize selective pressure
+        # selected_individuals = max_fitness_selection(population=population)
 
-# # Evolution loop with elitism and dynamic mutation rate
-# def evolve() -> list:
-#     population = initialize_population()
-#     best_individual = None
-#     best_fitness = float('-inf')
-    
-#     for generation in range(num_generations):
-#         fitnesses = [evaluate_fitness(individual) for individual in population]
-#         sorted_population = [x for _, x in sorted(zip(fitnesses, population), reverse=True)]
-#         new_population = sorted_population[:elite_size]  # Elitism: preserve the best individuals
+        # Create new population
+        new_population = []
+        while len(new_population) < population_size:
+            parent1, parent2 = random.sample(selected_individuals, 2)
+            child1, child2 = parent1.recombine(parent2)
+            child1.mutate(mutation_rate)
+            child2.mutate(mutation_rate)
+            new_population.extend([child1, child2])
+
+        population = new_population[:population_size]
+        evaluate_population(population=population)
+        print(f"Best fitness: {min([inidiv.fitness for inidiv in population])}")
+        print(f"Average fitness: {mean([inidiv.fitness for inidiv in population])}")
+        print(f"Standard Deviation fitness: {stdev([inidiv.fitness for inidiv in population])}")
+        # Write the population to the config files
+        for id, indiv in enumerate(population):
+            updated_xml_string = write_tl_logic(xml_string, indiv.tllogics)
+            with open(f"traffic_light/network_configs/grid_network_{id}_modified.net.xml", 'w') as file:
+                file.write(updated_xml_string)
+
+
+    # Find the best individual
+    best_individual = min(population, key=lambda x: x.fitness)
+    # Write the best individual to a config files
+    updated_xml_string = write_tl_logic(xml_string, best_individual.tllogics)
+    with open(f"traffic_light/network_configs/grid_network_best_indiv_{datetime.datetime.now()}.net.xml", 'w') as file:
+        file.write(updated_xml_string)
         
-#         if max(fitnesses) > best_fitness:
-#             best_fitness = max(fitnesses)
-#             best_individual = sorted_population[0]
-        
-#         while len(new_population) < population_size:
-#             parent1 = tournament_selection(population, fitnesses)
-#             parent2 = tournament_selection(population, fitnesses)
-#             child1, child2 = crossover(parent1, parent2)
-#             mutation_rate = adjust_mutation_rate(generation)
-#             child1 = mutate(child1, mutation_rate)
-#             child2 = mutate(child2, mutation_rate)
-#             new_population.extend([child1, child2])
-#         population = new_population
-#         print(f"Generation {generation+1}: Best Fitness = {best_fitness}")
-#     print(f"Best individual: {best_individual}")
-#     return best_individual
+    return best_individual
 
-# # Visualize an individual
-# def visualize_traffic_flow(best_individual):
-#     """
-#     Visualizes traffic flow for the best individual.
-#     """
-#     num_intervals = simulation_duration // interval_duration
-    
-#     # Initialize traffic flow and queue for each intersection
-#     traffic_flow = np.zeros((num_intersections, num_intervals))
-#     queue_lengths = np.zeros((num_intersections, num_intervals))
-    
-#     for i in range(num_intersections):
-#         green_time_remaining = best_individual[i]
-#         queue_length = 0
-#         for j in range(num_intervals):
-#             # Simulate arrival of vehicles
-#             arrivals = np.random.poisson(vehicles_per_minute[i] * (interval_duration / 60))
-#             queue_length += arrivals
-            
-#             if green_time_remaining > 0:
-#                 # Vehicles pass through if the light is green
-#                 vehicles_passed = min(queue_length, green_time_remaining)
-#                 traffic_flow[i, j] = vehicles_passed
-#                 queue_length -= vehicles_passed
-#                 green_time_remaining -= vehicles_passed
-            
-#             queue_lengths[i, j] = queue_length
-            
-#             # Reset green time after a full cycle
-#             if green_time_remaining <= 0:
-#                 green_time_remaining = sum(best_individual) - best_individual[i]
-    
-#     # Plotting
-#     fig, axs = plt.subplots(2, 1, figsize=(10, 8))
-    
-#     for i in range(num_intersections):
-#         axs[0].plot(range(num_intervals), traffic_flow[i, :], label=f'Intersection {i+1} Flow')
-#         axs[1].plot(range(num_intervals), queue_lengths[i, :], label=f'Intersection {i+1} Queue')
-    
-#     axs[0].set_title('Traffic Flow Over Time')
-#     axs[0].set_xlabel('Time Interval')
-#     axs[0].set_ylabel('Vehicles Passed')
-    
-#     axs[1].set_title('Queue Length Over Time')
-#     axs[1].set_xlabel('Time Interval')
-#     axs[1].set_ylabel('Vehicles Queued')
-    
-#     axs[0].legend()
-#     axs[1].legend()
-#     plt.tight_layout()
-#     plt.show()
+# Overwrite the main function cause that seems to be the thing to do in python
+if __name__ == "__main__":
+    print(str(evolutionary_algorithm()))
 
-# if __name__ == "__main__":
-#     visualize_traffic_flow(evolve())
+# print(f"Phases: {[phase for sublist in [tllogic.phases for tllogic in test_set.tllogics] for phase in sublist]}")
+
+# traci.set_phases(phases=[phase for sublist in [tllogic.phases for tllogic in test_set.tllogics] for phase in sublist])
+
+# traci.start(SUMO_CMD + ["-n", f"traffic_light/network_configs/grid_network_best_indiv_saved_0.net.xml"])
+# # pick an arbitrary junction
+# # junctionID = traci.junction.getIDList()[0]
+# # # subscribe around that junction with a sufficiently large
+# # # radius to retrieve the speeds of all vehicles in every step
+# # traci.junction.subscribeContext(
+# #     junctionID, tc.CMD_GET_VEHICLE_VARIABLE, 1000000,
+# #     [tc.VAR_SPEED, tc.VAR_ALLOWED_SPEED]
+# # )
+# # Get the step length
+# # stepLength = traci.simulation.getDeltaT()
+# sim_start_time = time()
+# while traci.simulation.getMinExpectedNumber() > 0:
+#     traci.simulationStep()
+#     # scResults = traci.junction.getContextSubscriptionResults(junctionID)
+#     # halting = 0
+#     # if scResults:
+#     #     relSpeeds = [d[tc.VAR_SPEED] / d[tc.VAR_ALLOWED_SPEED] for d in scResults.values()]
+#     #     # compute values corresponding to summary-output
+#     #     running = len(relSpeeds)
+#     #     halting = len([1 for d in scResults.values() if d[tc.VAR_SPEED] < 0.1])
+#     #     meanSpeedRelative = sum(relSpeeds) / running
+#     #     timeLoss = (1 - meanSpeedRelative) * running * stepLength
+# print(traci.simulation.getTime())
+# print(f"Time taken by simulation: {time() - sim_start_time}")
+# traci.close()
