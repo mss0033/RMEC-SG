@@ -1,5 +1,6 @@
 import datetime
 import libsumo as traci
+import numpy as np
 import random
 import re
 import traci.constants as tc
@@ -163,6 +164,19 @@ def evaluate_population(population: List[TLLogicSet]):
 
     # for (key, value) in return_dict.items():
     #     population[key].fitness = value
+        
+def identify_specification_gaming_individuals(population: List[TLLogicSet]):
+    fitness_values = [individual.fitness for individual in population]
+    mean_fitness = np.mean(fitness_values)
+    std_dev_fitness = np.std(fitness_values)
+    
+    potential_gaming_individuals = [
+        individual for individual in population
+        if individual.fitness < mean_fitness - 2 * std_dev_fitness or
+           individual.fitness > mean_fitness + 2 * std_dev_fitness
+    ]
+    
+    return potential_gaming_individuals
 
 def evolutionary_algorithm():
     # Initialize population

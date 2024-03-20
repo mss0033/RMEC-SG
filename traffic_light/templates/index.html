@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Traffic Light EC - Specification Gaming</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
+    <script>
+        var socket = io();
+
+        function runEC() {
+            var populationSize = document.getElementById('population_size').value;
+            var numGenerations = document.getElementById('num_generations').value;
+            var mutationRate = document.getElementById('mutation_rate').value;
+            
+            socket.emit('run_ec', {
+                population_size: populationSize,
+                num_generations: numGenerations,
+                mutation_rate: mutationRate
+            });
+        }
+
+        socket.on('potential_gaming_individual', function(data) {
+            var individualInfo = document.getElementById('individual_info');
+            individualInfo.innerText = data.individual;
+            
+            // TODO: Display the SUMO-GUI simulation of the individual
+        });
+    </script>
+</head>
+<body>
+    <h1>Traffic Light EC - Specification Gaming</h1>
+    <label for="population_size">Population Size:</label>
+    <input type="number" id="population_size" required><br>
+    
+    <label for="num_generations">Number of Generations:</label>
+    <input type="number" id="num_generations" required><br>
+    
+    <label for="mutation_rate">Mutation Rate:</label>
+    <input type="number" id="mutation_rate" step="0.01" required><br>
+    
+    <button onclick="runEC()">Run EC</button>
+    
+    <h2>Potential Specification Gaming Individual</h2>
+    <pre id="individual_info"></pre>
+    
+    <!-- TODO: Add a container for displaying the SUMO-GUI simulation -->
+</body>
+</html>
