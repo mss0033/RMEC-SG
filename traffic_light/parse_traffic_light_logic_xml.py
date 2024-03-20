@@ -24,10 +24,10 @@ def write_tl_logic(xml_string, tl_logics: List[TLLogic]):
         if tl_logic_element is not None:
             # Create a new tl_logic_element
             new_tl_logic_element = ET.Element('tlLogic', {
-            'id': tl_logic.id,
-            'type': tl_logic.type,
-            'programID': tl_logic.programID,
-            'offset': str(tl_logic.offset)
+                'id': tl_logic.id,
+                'type': tl_logic.type,
+                'programID': tl_logic.programID,
+                'offset': str(tl_logic.offset)
             })
             # For each phase
             for phase in tl_logic.phases:
