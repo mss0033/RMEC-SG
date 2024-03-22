@@ -13,9 +13,8 @@ def index():
 def run_ec(data):
     population_size = data['population_size']
     num_generations = data['num_generations']
-    mutation_rate = data['mutation_rate']
     
-    population = evolutionary_algorithm(population_size, num_generations, mutation_rate)
+    population = evolutionary_algorithm(int(population_size), int(num_generations))
     potential_gaming_individuals = identify_specification_gaming_individuals(population)
     
     for individual in potential_gaming_individuals:

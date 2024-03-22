@@ -1,2 +1,3 @@
 traffic_light/__pycache__/
-traffic_light/network_configs/*_modified*
+traffic_light/network_configs/old_runs
+traffic_light/network_configs/Run_*

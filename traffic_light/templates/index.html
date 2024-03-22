@@ -9,12 +9,10 @@
         function runEC() {
             var populationSize = document.getElementById('population_size').value;
             var numGenerations = document.getElementById('num_generations').value;
-            var mutationRate = document.getElementById('mutation_rate').value;
             
             socket.emit('run_ec', {
                 population_size: populationSize,
-                num_generations: numGenerations,
-                mutation_rate: mutationRate
+                num_generations: numGenerations
             });
         }
 
@@ -33,9 +31,6 @@
     
     <label for="num_generations">Number of Generations:</label>
     <input type="number" id="num_generations" required><br>
-    
-    <label for="mutation_rate">Mutation Rate:</label>
-    <input type="number" id="mutation_rate" step="0.01" required><br>
     
     <button onclick="runEC()">Run EC</button>
     
