@@ -1,9 +1,11 @@
 import datetime
-import libsumo as traci
+import libsumo
+import traci
 import numpy as np
 import random
 import re
 import os
+import streamlit
 import traci.constants as tc
 
 from copy import deepcopy
@@ -29,8 +31,10 @@ NUM_SIMS = 24
 
 # Sumo commands
 SUMO_BINARY = f"/usr/bin/sumo"
+SUMO_GUI_BINARY = f"/usr/bin/sumo-gui"
 SUMO_ROUTE = f"{ROUTE_CONFIGS_DIR}/grid_network_0_routes_stairstep.rou.xml"
 SUMO_CMD = [SUMO_BINARY, "-r", SUMO_ROUTE, "--no-warnings", "true"]
+SUMO_GUI_CMD = [SUMO_GUI_BINARY, "-r", SUMO_ROUTE, "--no-warnings", "true"]
 
 # Evolutionary algorithm parameters
 POPULATION_SIZE = 100
@@ -176,22 +180,22 @@ def run_simulation(index: 'int',
                    run_label: str, 
                    return_dict: dict):
     # Start SUMO simulation
-    traci.start(SUMO_CMD + ["-n", f"{NETWORK_CONFIGS_DIR}/{run_label}/generation_{generation}/grid_network_{index}_modified.net.xml"], label=f"{index}")
+    libsumo.start(SUMO_CMD + ["-n", f"{NETWORK_CONFIGS_DIR}/{run_label}/generation_{generation}/grid_network_{index}_modified.net.xml"], label=f"{index}")
     # Initialize the fitness for the index
     return_dict[index] = 0
     # start_time = time()
     steps = 0
-    while traci.simulation.getMinExpectedNumber() > 0:
-        traci.simulationStep()
+    while libsumo.simulation.getMinExpectedNumber() > 0:
+        libsumo.simulationStep()
         steps += 1
 
     # Calculate fitness based on how long the simulation took
-    # return_dict[index] = traci.simulation.getTime()
-    simulation_time = traci.simulation.getTime()
+    # return_dict[index] = libsumo.simulation.getTime()
+    simulation_time = libsumo.simulation.getTime()
     return_dict[index] = steps
     # Close SUMO simulation
-    # traci.simulation.close()
-    traci.close()
+    # libsumo.simulation.close()
+    libsumo.close()
     return steps
 
 # Facilitate multiprocessing of inidividuals
@@ -229,7 +233,13 @@ def identify_specification_gaming_individuals(population: List[TLLogicSet]) -> d
     return potential_gaming_individuals
 
 # Take actions against SG individuals
-def mitigate_sg_individuals(potentially_sg_indiv: dict[int, TLLogicSet]):
+def mitigate_sg_individuals(population: List[TLLogicSet], generation: int, run_label: str):
+    individuals_to_mitigate = identify_specification_gaming_individuals(population=population)
+    index = next(iter(individuals_to_mitigate))
+    traci.start(SUMO_GUI_CMD + ["-n", f"{NETWORK_CONFIGS_DIR}/{run_label}/generation_{generation}/grid_network_{index}_modified.net.xml"], label=f"{index}")
+    while traci.simulation.getMinExpectedNumber() > 0:
+        traci.simulationStep()
+    traci.close()
     pass
 
 # Main body function for the overall evolutionary algorithm
@@ -244,25 +254,30 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
         population = initialize_population_from_exiting(population_size=population_size, generation=initialize_from_existing[1] - 1, run_label=run_label, template_tllogics=template)
     else:
         if not template:
-            print("Unable to read in template file, exiting")
+            streamlit.write("Unable to read in template file, exiting")
             return
         population = initialize_population(population_size, generation=0, run_label=run_label, template_tllogics=template)
     if len(population) <= 0:
-        print(f"Error initializing population, unable to meaningfully fun EC")
+        streamlit.write(f"Error initializing population, unable to meaningfully fun EC")
         return
     if initialize_from_existing[0]:
         # Evaluate fitness of each individual
         evaluate_population(population=population, generation=initialize_from_existing[1] - 1, run_label=run_label)
     else:
         evaluate_population(population=population, generation=0, run_label=run_label)
+    # Create placeholders so we can write to the same spots on the UI
+    generation_label = streamlit.empty()
+    best_fitness_label = streamlit.empty()
+    average_fitness_label = streamlit.empty()
+    std_dev_label = streamlit.empty()
+    spec_gaming_indiv_label =streamlit.empty()
     # Print some population stats
-    print(f"Generation {initialize_from_existing[1]}")
-    print(f"Best fitness: {min([inidiv.fitness for inidiv in population])}")
-    print(f"Average fitness: {mean([inidiv.fitness for inidiv in population])}")
-    print(f"Standard Deviation fitness: {stdev([inidiv.fitness for inidiv in population])}")
+    generation_label.write(f"Generation {initialize_from_existing[1]}")
+    best_fitness_label.write(f"Best fitness: {min([inidiv.fitness for inidiv in population])}")
+    average_fitness_label.write(f"Average fitness: {mean([inidiv.fitness for inidiv in population])}")
+    std_dev_label.write(f"Standard Deviation fitness: {stdev([inidiv.fitness for inidiv in population])}")
 
     for generation in range(initialize_from_existing[1], num_generations):
-        print(f"Generation {generation + 1}")
         # Maximize selective pressure
         # Create new population; ensure survival of top n individuals
         new_population = max_fitness_selection(population)
@@ -282,12 +297,15 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
         write_population_to_files(population=population, run_label=run_label, generation=generation)
         # Evaluate the population
         evaluate_population(population=population, generation=generation, run_label=run_label)
+        # Mitigate any specification gamed individuals
+        mitigate_sg_individuals(population=population, generation=generation, run_label=run_label)
         # Print some population stats
-        print(f"Best fitness: {min([inidiv.fitness for inidiv in population])}")
-        print(f"Average fitness: {mean([inidiv.fitness for inidiv in population])}")
-        print(f"Standard Deviation fitness: {stdev([inidiv.fitness for inidiv in population])}")
+        generation_label.write(f"Generation {generation + 1}")
+        best_fitness_label.write(f"Best fitness: {min([inidiv.fitness for inidiv in population])}")
+        average_fitness_label.write(f"Average fitness: {mean([inidiv.fitness for inidiv in population])}")
+        std_dev_label.write(f"Standard Deviation fitness: {stdev([inidiv.fitness for inidiv in population])}")
         # Identify specification gaming individuals
-        print(f"Potentially specification gaming individuals: {identify_specification_gaming_individuals(population=population).keys}")
+        spec_gaming_indiv_label.write(f"Potentially specification gaming individuals: {list(identify_specification_gaming_individuals(population=population).keys())}")
 
         # # Find the best individual
         # best_individual = min(population, key=lambda x: x.fitness)
@@ -303,7 +321,7 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
 
 # Overwrite the main function cause that seems to be the thing to do in python
 if __name__ == "__main__":
-    print(str(evolutionary_algorithm()))
+    streamlit.write(str(evolutionary_algorithm()))
 
 # print(f"Phases: {[phase for sublist in [tllogic.phases for tllogic in test_set.tllogics] for phase in sublist]}")
 
