@@ -225,22 +225,23 @@ def identify_specification_gaming_individuals(population: List[TLLogicSet]) -> d
     std_dev_fitness = np.std(fitness_values)
     
     potential_gaming_individuals = {
-        population.index(individual): individual for individual in population
-        if individual.fitness < mean_fitness - 2 * std_dev_fitness or
-           individual.fitness > mean_fitness + 2 * std_dev_fitness
+        population.index(individual): individual for individual in population if individual.fitness < (mean_fitness - 2 * std_dev_fitness)
     }
     
     return potential_gaming_individuals
 
+def replace_indiv_with_clone(population: List[TLLogicSet], index_to_replace: int, invalid_indices: List[int]):
+    valid_indices = [i for i in range(len(population)) if i not in invalid_indices and i != index_to_replace]
+    population[index_to_replace] = deepcopy(population[random.choice(valid_indices)])
+
 # Take actions against SG individuals
-def mitigate_sg_individuals(population: List[TLLogicSet], generation: int, run_label: str):
+def mitigate_sg_individuals(population: List[TLLogicSet]):
     individuals_to_mitigate = identify_specification_gaming_individuals(population=population)
-    index = next(iter(individuals_to_mitigate))
-    traci.start(SUMO_GUI_CMD + ["-n", f"{NETWORK_CONFIGS_DIR}/{run_label}/generation_{generation}/grid_network_{index}_modified.net.xml"], label=f"{index}")
-    while traci.simulation.getMinExpectedNumber() > 0:
-        traci.simulationStep()
-    traci.close()
-    pass
+    index_label = streamlit.empty()
+    gaming_indiv_indicies = list(individuals_to_mitigate.keys())
+    for index, indiv in individuals_to_mitigate.items():
+        index_label.write(f"Individual number: {index} with a fitness of {indiv.fitness} has been identified as potentially specification gaming")
+        replace_button = streamlit.button("Replace Individual", help="Replaces the individual with a randomly selected clone of another individual", on_click=replace_indiv_with_clone, args=(population, index, gaming_indiv_indicies))
 
 # Main body function for the overall evolutionary algorithm
 def evolutionary_algorithm(population_size: int = POPULATION_SIZE, 
@@ -298,7 +299,7 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
         # Evaluate the population
         evaluate_population(population=population, generation=generation, run_label=run_label)
         # Mitigate any specification gamed individuals
-        mitigate_sg_individuals(population=population, generation=generation, run_label=run_label)
+        mitigate_sg_individuals(population=population)
         # Print some population stats
         generation_label.write(f"Generation {generation + 1}")
         best_fitness_label.write(f"Best fitness: {min([inidiv.fitness for inidiv in population])}")
