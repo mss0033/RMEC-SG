@@ -55,6 +55,7 @@ def assessment_page():
     # Set up the page title and content
     st.title("Specification Gaming Assessment")
     st.write("Video clip of agent performance...")
+    st.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif")
     st.write("Agent statistics...")
     st.write("Is this individual specification gaming?")
     # Set up the checkboxes

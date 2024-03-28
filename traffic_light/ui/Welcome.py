@@ -37,8 +37,8 @@ def switch_page(start_time: float):
 
 def welcome_page():
     hide_side_navbar()
-    st.title("Welcome to the Specification Gaming Project")
-    st.write("Explanation of the basic premise of the project...")
+    st.title("Mitigating Specification Gaming with Interactive Evolution")
+    st.write("Thank you for participating in this project. What follows will be a breif tutorial which covers the basic ideas and concepts necessary to perform the required task")
     # Set up the session time tracking for this page
     if 'welcome_start_time' not in st.session_state:
         st.session_state.welcome_start_time = time.time()

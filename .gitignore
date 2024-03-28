@@ -2,4 +2,5 @@ traffic_light/__pycache__/
 traffic_light/ui/__pycache__
 traffic_light/network_configs/old_runs
 traffic_light/network_configs/Run_*
+traffic_light/network_configs/Golden_Run_*
 user_interactions.log

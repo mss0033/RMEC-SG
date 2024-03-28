@@ -45,7 +45,7 @@ def thank_you_page():
     # Set up the session time tracking for this page
     if 'thank_you_start_time' not in st.session_state:
         st.session_state.thank_you_start_time = time.time()
-    st.button("Restart", key=f"thank_you_restart_button", on_click=switch_page, args=(st.session_state.thank_you_start_time,))
+    # st.button("Restart", key=f"thank_you_restart_button", on_click=switch_page, args=(st.session_state.thank_you_start_time,))
 
 def main():
     if 'thanks_navbar_hidden' not in st.session_state:

@@ -38,8 +38,13 @@ def switch_page(start_time: float):
 def tutorial_pages():
     hide_side_navbar()
     st.title("Tutorial")
-    st.write("Brief explanation of specification gaming...")
-    st.write("Visual examples of specification gaming...")
+    st.write("Specification Gaming: A situation where an optimization system, such as a Neural Network or Evolutionary Computing, produces a result which performs well according to some objective (\"maximize happieness\") by doing something unexpected or undesired.")
+    st.write("Below are some visual examples of specification gaming")
+    col_1, col_2, col_3 = st.columns(3)
+    col_1.image("traffic_light/ui/resources/SG_example_images/block_flip.gif")
+    col_2.image("traffic_light/ui/resources/SG_example_images/boat_race.gif")
+    col_3.image("traffic_light/ui/resources/SG_example_images/slide_to_the_right.gif")
+    st.image("traffic_light/ui/resources/SG_example_images/quilt_of_sg.gif")
     # Set up the session time tracking for this page
     if 'tutorial_start_time' not in st.session_state:
         st.session_state.tutorial_start_time = time.time()

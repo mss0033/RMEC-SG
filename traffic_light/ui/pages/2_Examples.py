@@ -37,8 +37,14 @@ def switch_page(start_time: float):
 
 def example_pages():
     hide_side_navbar()
-    st.title("Specification Gaming Examples")
-    st.write("Hand-picked positive and negative examples of specification gaming in SUMO traffic simulation...")
+    st.title("Hand-picked examples of specification gaming in SUMO traffic simulation...")
+    st.write("Here are some Specification Gaming examples from the specific project at hand")
+    col_1, col_2 = st.columns(2)
+    col_1.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Not Specifiaction Gaming")
+    col_2.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Not Specifiaction Gaming")
+    col_3, col_4 = st.columns(2)
+    col_3.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming")
+    col_4.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming")
     # Set up the session time tracking for this page
     if 'examples_start_time' not in st.session_state:
         st.session_state.examples_start_time = time.time()

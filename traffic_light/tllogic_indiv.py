@@ -13,7 +13,7 @@ RED_PLUS_YELLOW_LIGHT = 'u'
 OFF_BLINKING_LIGHT = 'o'
 OFF_NO_SIGNAL_LIGHT = 'O'
 # List of Phase options
-PHASE_STATE_OPTIONS = [RED_LIGHT, YELLOW_LIGHT, GREEN_NO_PRI_LIGHT, GREEN_YES_PRI_LIGHT, RED_PLUS_YELLOW_LIGHT, OFF_BLINKING_LIGHT, OFF_NO_SIGNAL_LIGHT]
+PHASE_STATE_OPTIONS = [RED_LIGHT, GREEN_NO_PRI_LIGHT, GREEN_YES_PRI_LIGHT, RED_PLUS_YELLOW_LIGHT, OFF_BLINKING_LIGHT, OFF_NO_SIGNAL_LIGHT]
 # Phase attribte keys
 DURATION_ATTR = 'duration'
 STATE_ATTR = 'state'
@@ -36,7 +36,7 @@ PHASES_DELETE_PHASE = 'Delete Phase'
 PHASES_MUTATE_OPTIONS = [PHASES_CLONE_PHASE, PHASES_DELETE_PHASE] 
 # Min and max duration of lights
 MIN_LIGHT_DURATION = 1
-MAX_LIGHT_DURATION = 120
+MAX_LIGHT_DURATION = 240
 
 # Represents a Phase component of a Traffic Light Logic
 class Phase:
@@ -149,8 +149,9 @@ class TLLogic:
     def mutate(self,  mutation_rate: 'float'):
         # Check and see if this individual is going to be mutated
         if random.random() <= mutation_rate:
-            # Select a random phase to mutate
-            random.choice(self.phases).mutate()
+            # Select a random green light (even) phase to mutate
+            index_of_phase = random.choice([i for i in range(len(self.phases)) if i % 2 == 0])
+            self.phases[index_of_phase].mutate()
     
     # Recombines a pair of individuals
     def recombine(self, partner: 'TLLogic') -> Tuple['TLLogic', 'TLLogic']:

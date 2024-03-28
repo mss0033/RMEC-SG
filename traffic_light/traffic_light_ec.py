@@ -5,12 +5,12 @@ import numpy as np
 import random
 import re
 import os
-import streamlit
 import traci.constants as tc
 
+from concurrent.futures import ProcessPoolExecutor
 from copy import deepcopy
 from math import log
-from multiprocessing import Manager, Process
+from multiprocessing import Manager
 from parse_traffic_light_logic_xml import parse_tl_logic, write_tl_logic
 from statistics import mean, stdev
 from time import time
@@ -25,21 +25,28 @@ ROUTE_CONFIGS_DIR = "traffic_light/route_configs"
 SUMO_CONFIGS_DIR = "traffic_light/sumo_configs"
 ORIGINALS_DIR = "originals"
 BEST_INDIVIDUALS_DIR = "best_individuals"
+TLLOGIC_SEED_INDIV_CONFIG = "grid_network_original.net.xml"
 
 # Number of concurrent simulations to run
 NUM_SIMS = 24
 
+# Number of steps the original TLS took to run a given route
+STEPS_OG_STAIRSTEP = 17903
+STEPS_OG_RANDOM_LIST = [3792, 3758, 3813, 3801, 5952, 3792, 3747, 3767, 3756]
+
 # Sumo commands
 SUMO_BINARY = f"/usr/bin/sumo"
 SUMO_GUI_BINARY = f"/usr/bin/sumo-gui"
-SUMO_ROUTE = f"{ROUTE_CONFIGS_DIR}/grid_network_0_routes_stairstep.rou.xml"
-SUMO_CMD = [SUMO_BINARY, "-r", SUMO_ROUTE, "--no-warnings", "true"]
-SUMO_GUI_CMD = [SUMO_GUI_BINARY, "-r", SUMO_ROUTE, "--no-warnings", "true"]
+SUMO_STAIRSTEP_ROUTE = f"{ROUTE_CONFIGS_DIR}/grid_network_0_routes_stairstep.rou.xml"
+SUMO_RANDOM_ROUTE = f"{ROUTE_CONFIGS_DIR}/grid_network_0_routes_random_8.rou.xml"
+SUMO_CMD_STAIRSTEP = [SUMO_BINARY, "-r", SUMO_STAIRSTEP_ROUTE, "--no-warnings", "true"]
+SUMO_CMD_RANDOM = [SUMO_BINARY, "--no-warnings", "true"]
+SUMO_GUI_CMD = [SUMO_GUI_BINARY, "-r", SUMO_STAIRSTEP_ROUTE, "--no-warnings", "true"]
 
 # Evolutionary algorithm parameters
 POPULATION_SIZE = 100
-TOURNAMENT_SIZE = 20
-MUTATION_RATE = 0.25
+TOURNAMENT_SIZE = 50
+MUTATION_RATE = 0.75
 NUM_GENERATIONS = 50
 
 def read_in_tllogic_set_from_file(filename: str) -> TLLogicSet:
@@ -71,6 +78,20 @@ def beautify_xml(xml_str: str) -> str:
     pretty_xml_without_blanks = re.sub(r'^\s*\n', '', pretty_xml, flags=re.MULTILINE)
 
     return pretty_xml_without_blanks
+
+# Writes a list of indices of potentially SG indivs to a file 
+def write_potential_sg_indivs_to_file(potential_sg_indivs: dict[int, TLLogicSet], 
+                                      generation: int, 
+                                      run_label: 'str'):
+    # Create a file in the generations dir that will hold the list of indices of potentially SG indivs form that generation
+    sg_file = f"{NETWORK_CONFIGS_DIR}/{run_label}/generation_{generation}/potential_sg_indiv_indexs.txt"
+    # Create the directory to ensure it exists when we try to open it for writing
+    os.makedirs(os.path.dirname(sg_file), exist_ok=True)
+    try:
+        with open(sg_file, 'w') as file:
+            file.write(', '.join(list(potential_sg_indivs.keys())))
+    except FileNotFoundError as fnfe:
+        print("Unable to write list of index of potential SG indivs")
 
 # Writes the population to the config files
 def write_population_to_files(population: List[TLLogicSet], 
@@ -179,53 +200,60 @@ def run_simulation(index: 'int',
                    generation: int, 
                    run_label: str, 
                    return_dict: dict):
-    # Start SUMO simulation
-    libsumo.start(SUMO_CMD + ["-n", f"{NETWORK_CONFIGS_DIR}/{run_label}/generation_{generation}/grid_network_{index}_modified.net.xml"], label=f"{index}")
-    # Initialize the fitness for the index
-    return_dict[index] = 0
-    # start_time = time()
-    steps = 0
+    # Start SUMO simulation for the stairstep route
+    libsumo.start(SUMO_CMD_STAIRSTEP + ["-n", f"{NETWORK_CONFIGS_DIR}/{run_label}/generation_{generation}/grid_network_{index}_modified.net.xml"], label=f"{index}")
+    # Counter for the number of steps a simulation takes
+    steps_stairstep = 0
+    # Run the first simulation
     while libsumo.simulation.getMinExpectedNumber() > 0:
         libsumo.simulationStep()
-        steps += 1
-
-    # Calculate fitness based on how long the simulation took
-    # return_dict[index] = libsumo.simulation.getTime()
-    simulation_time = libsumo.simulation.getTime()
-    return_dict[index] = steps
+        steps_stairstep += 1
     # Close SUMO simulation
-    # libsumo.simulation.close()
     libsumo.close()
-    return steps
+    # Select a random route from the list of random routes
+    random_route_index = random.randint(0, 8)
+    steps_random = 0
+    # Start SUMO simulation for a random route
+    libsumo.start(SUMO_CMD_RANDOM + ["-r", f"{ROUTE_CONFIGS_DIR}/grid_network_0_routes_random_{random_route_index}.rou.xml", "-n", f"{NETWORK_CONFIGS_DIR}/{run_label}/generation_{generation}/grid_network_{index}_modified.net.xml"], label=f"{index}")
+    while libsumo.simulation.getMinExpectedNumber() > 0:
+        libsumo.simulationStep()
+        steps_random += 1
+    # Close SUMO simulation
+    libsumo.close()
+    # Calculate fitness based on how many steps the simulation took
+    return ((steps_stairstep / (STEPS_OG_STAIRSTEP)) * 100) + ((steps_random / STEPS_OG_RANDOM_LIST[random_route_index]) * 10)
 
-# Facilitate multiprocessing of inidividuals
+def process_task(index: int, generation: int, run_label: str, return_dict: dict):
+    return_dict[index] = run_simulation(index=index, generation=generation, run_label=run_label, return_dict=return_dict)
+
 def evaluate_population(population: List[TLLogicSet], 
                         generation: int, 
                         run_label: str):
     manager = Manager()
     return_dict = manager.dict()
-    # for (index, indiv) in enumerate(population):
-    #     indiv.fitness = run_simulation(index=index, return_dict=return_dict)
-    processes = []
-    for (index, indiv) in enumerate(population):
-        process = Process(target=run_simulation, args=(index, generation, run_label, return_dict))
-        processes.append(process)
-        process.start()
-    
-    for process in processes:
-        process.join()
 
+    # Use ProcessPoolExecutor to manage a pool of worker processes
+    with ProcessPoolExecutor(max_workers=24) as executor:
+        # Submit tasks for each individual in the population
+        futures = [executor.submit(process_task, index, generation, run_label, return_dict) for index, _ in enumerate(population)]
+        
+        # Wait for all tasks to complete (optional here since exiting the 'with' block will wait automatically)
+        for future in futures:
+            future.result()  # Accessing the result will also re-raise any exceptions caught during execution
+
+    # Update the fitness values in the population based on the results stored in return_dict
     for (key, value) in return_dict.items():
         population[key].fitness = value
 
 # Identify potentially specification gamed individuals
 def identify_specification_gaming_individuals(population: List[TLLogicSet]) -> dict[int, TLLogicSet]:
-    fitness_values = [individual.fitness for individual in population]
+    indiv_to_consider = [individual for individual in population if individual.fitness <= 200] # 200 here represents the "base case" where an individual is equal to the seeded TLLogic Set
+    fitness_values = [individual.fitness for individual in indiv_to_consider]
     mean_fitness = np.mean(fitness_values)
     std_dev_fitness = np.std(fitness_values)
     
     potential_gaming_individuals = {
-        population.index(individual): individual for individual in population if individual.fitness < (mean_fitness - 2 * std_dev_fitness)
+        population.index(individual): individual for individual in population if individual.fitness <= (mean_fitness - std_dev_fitness)
     }
     
     return potential_gaming_individuals
@@ -235,13 +263,9 @@ def replace_indiv_with_clone(population: List[TLLogicSet], index_to_replace: int
     population[index_to_replace] = deepcopy(population[random.choice(valid_indices)])
 
 # Take actions against SG individuals
-def mitigate_sg_individuals(population: List[TLLogicSet]):
+def mitigate_sg_individuals(population: List[TLLogicSet], generation: int, run_label: str):
     individuals_to_mitigate = identify_specification_gaming_individuals(population=population)
-    index_label = streamlit.empty()
-    gaming_indiv_indicies = list(individuals_to_mitigate.keys())
-    for index, indiv in individuals_to_mitigate.items():
-        index_label.write(f"Individual number: {index} with a fitness of {indiv.fitness} has been identified as potentially specification gaming")
-        replace_button = streamlit.button("Replace Individual", help="Replaces the individual with a randomly selected clone of another individual", on_click=replace_indiv_with_clone, args=(population, index, gaming_indiv_indicies))
+    write_potential_sg_indivs_to_file(potential_sg_indivs=individuals_to_mitigate, generation=generation, run_label=run_label)
 
 # Main body function for the overall evolutionary algorithm
 def evolutionary_algorithm(population_size: int = POPULATION_SIZE, 
@@ -250,33 +274,27 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
                            run_label: str = (f"Run_" + datetime.datetime.now().strftime("%Y_%m_%d_%HH%MM%SS"))):
     # Initialize population
     population = []
-    template = read_in_tllogic_set_from_file(filename=f"{NETWORK_CONFIGS_DIR}/{ORIGINALS_DIR}/grid_network_original.net.xml")
+    template = read_in_tllogic_set_from_file(filename=f"{NETWORK_CONFIGS_DIR}/{ORIGINALS_DIR}/{TLLOGIC_SEED_INDIV_CONFIG}")
     if initialize_from_existing[0]:
         population = initialize_population_from_exiting(population_size=population_size, generation=initialize_from_existing[1] - 1, run_label=run_label, template_tllogics=template)
     else:
         if not template:
-            streamlit.write("Unable to read in template file, exiting")
+            print("Unable to read in template file, exiting")
             return
         population = initialize_population(population_size, generation=0, run_label=run_label, template_tllogics=template)
     if len(population) <= 0:
-        streamlit.write(f"Error initializing population, unable to meaningfully fun EC")
+        print(f"Error initializing population, unable to meaningfully fun EC")
         return
     if initialize_from_existing[0]:
         # Evaluate fitness of each individual
         evaluate_population(population=population, generation=initialize_from_existing[1] - 1, run_label=run_label)
     else:
         evaluate_population(population=population, generation=0, run_label=run_label)
-    # Create placeholders so we can write to the same spots on the UI
-    generation_label = streamlit.empty()
-    best_fitness_label = streamlit.empty()
-    average_fitness_label = streamlit.empty()
-    std_dev_label = streamlit.empty()
-    spec_gaming_indiv_label =streamlit.empty()
     # Print some population stats
-    generation_label.write(f"Generation {initialize_from_existing[1]}")
-    best_fitness_label.write(f"Best fitness: {min([inidiv.fitness for inidiv in population])}")
-    average_fitness_label.write(f"Average fitness: {mean([inidiv.fitness for inidiv in population])}")
-    std_dev_label.write(f"Standard Deviation fitness: {stdev([inidiv.fitness for inidiv in population])}")
+    print(f"Generation {initialize_from_existing[1]}")
+    print(f"Best fitness: {min([inidiv.fitness for inidiv in population])}")
+    print(f"Average fitness: {mean([inidiv.fitness for inidiv in population])}")
+    print(f"Standard Deviation fitness: {stdev([inidiv.fitness for inidiv in population])}")
 
     for generation in range(initialize_from_existing[1], num_generations):
         # Maximize selective pressure
@@ -299,19 +317,14 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
         # Evaluate the population
         evaluate_population(population=population, generation=generation, run_label=run_label)
         # Mitigate any specification gamed individuals
-        mitigate_sg_individuals(population=population)
+        mitigate_sg_individuals(population=population, generation=generation, run_label=run_label)
         # Print some population stats
-        generation_label.write(f"Generation {generation + 1}")
-        best_fitness_label.write(f"Best fitness: {min([inidiv.fitness for inidiv in population])}")
-        average_fitness_label.write(f"Average fitness: {mean([inidiv.fitness for inidiv in population])}")
-        std_dev_label.write(f"Standard Deviation fitness: {stdev([inidiv.fitness for inidiv in population])}")
+        print(f"Generation {generation + 1}")
+        print(f"Best fitness: {np.min([inidiv.fitness for inidiv in population])}")
+        print(f"Average fitness: {np.mean([inidiv.fitness for inidiv in population])}")
+        print(f"Standard Deviation fitness: {np.std([inidiv.fitness for inidiv in population])}")
         # Identify specification gaming individuals
-        spec_gaming_indiv_label.write(f"Potentially specification gaming individuals: {list(identify_specification_gaming_individuals(population=population).keys())}")
-
-        # # Find the best individual
-        # best_individual = min(population, key=lambda x: x.fitness)
-        # # Write the best individual to a config files
-        # write_best_indiv_to_file(index=population.index(best_individual), best_indiv=best_individual)
+        print(f"Potentially specification gaming individuals: {list(identify_specification_gaming_individuals(population=population).keys())}")
 
     # Find the best individual
     best_individual = min(population, key=lambda x: x.fitness)
@@ -322,13 +335,9 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
 
 # Overwrite the main function cause that seems to be the thing to do in python
 if __name__ == "__main__":
-    streamlit.write(str(evolutionary_algorithm()))
+    print(str(evolutionary_algorithm(population_size=250, num_generations=50, initialize_from_existing=(False, 0), run_label="Golden_Run_Attempt_5")))
 
-# print(f"Phases: {[phase for sublist in [tllogic.phases for tllogic in test_set.tllogics] for phase in sublist]}")
-
-# traci.set_phases(phases=[phase for sublist in [tllogic.phases for tllogic in test_set.tllogics] for phase in sublist])
-
-# traci.start(SUMO_CMD + ["-n", f"{NETWORK_CONFIGS_DIR}/grid_network_best_indiv_saved_1.net.xml"])
+# traci.start(SUMO_GUI_CMD + ["-n", f"{NETWORK_CONFIGS_DIR}/Golden_Run_Attempt_4/best_individuals/grid_network_best_indiv_Golden_Run_Attempt_4_2024-03-27 17:11:03.903860.net.xml"])
 # # pick an arbitrary junction
 # # junctionID = traci.junction.getIDList()[0]
 # # # subscribe around that junction with a sufficiently large
@@ -353,4 +362,4 @@ if __name__ == "__main__":
 #     #     timeLoss = (1 - meanSpeedRelative) * running * stepLength
 # print(traci.simulation.getTime())
 # print(f"Time taken by simulation: {time() - sim_start_time}")
-# traci.close()
+traci.close()
