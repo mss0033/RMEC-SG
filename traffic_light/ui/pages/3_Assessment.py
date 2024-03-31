@@ -67,8 +67,10 @@ def assessment_page():
     col_2.image(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_random.gif", caption=f"Baseline random performance: {orginal_network_config['OG'][1]}")
     col_3, col_4 = st.columns(2)
     network_to_display = random.choice(list(indiv_network_configs.keys()))
-    col_3.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{network_to_display}_stairstep.gif", caption=f"Stairstep performance (lower is better): {indiv_network_configs[network_to_display][0]}")
-    col_4.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{network_to_display}_random.gif", caption=f"Random performance (lower is better): {indiv_network_configs[network_to_display][1]}")
+    if 'network_to_display' not in st.session_state:
+        st.session_state.network_to_display = network_to_display
+    col_3.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif", caption=f"Stairstep performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][0]}")
+    col_4.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif", caption=f"Random performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][1]}")
     # st.write("Agent statistics...")
     st.write("Is this individual specification gaming?")
     # Set up the checkboxes
