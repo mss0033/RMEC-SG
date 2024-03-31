@@ -58,7 +58,7 @@ def example_pages():
              \nLastly, please keep in mind that this experiment was specifically constructed in such a way that specification gaming would occur with a high degree of predictability and regularity.""")
     col_1, col_2 = st.columns(2)
     # col_1.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Not Specifiaction Gaming: While the individual performs better than the baseline, it performs well in both traffic senarios")
-    col_2.markdown(
+    col_1.markdown(
         f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{2}_stairstep.gif")}" width="100%" height="100%"><figcaption>Baseline stairstep performance: {indiv_network_configs[2][0]}</figcaption></figure>',
         unsafe_allow_html=True,
     )
@@ -69,12 +69,12 @@ def example_pages():
     )
     col_3, col_4 = st.columns(2)
     # col_3.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming: The individual demonstraits a much higher than baseline performance in this traffic senario")
-    col_2.markdown(
+    col_3.markdown(
         f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{0}_stairstep.gif")}" width="100%" height="100%"><figcaption>Baseline stairstep performance: {indiv_network_configs[2][0]}</figcaption></figure>',
         unsafe_allow_html=True,
     )
     # col_4.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming: The individual demonstraits a much lower than baseline performance in this traffic senario")
-    col_2.markdown(
+    col_4.markdown(
         f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{0}_stairstep.gif")}" width="100%" height="100%"><figcaption>Baseline stairstep performance: {indiv_network_configs[2][1]}</figcaption></figure>',
         unsafe_allow_html=True,
     )
