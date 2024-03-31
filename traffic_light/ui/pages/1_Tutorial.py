@@ -26,7 +26,7 @@ def hide_side_navbar():
 def log_user_interaction(page, interaction_type, data=None):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     log_entry = f"{timestamp} - Page: {page}, Interaction: {interaction_type}, Data: {data}"
-    # logging.info(log_entry)
+    logging.info(log_entry)
     print(log_entry)
 
 def switch_page(start_time: float):
