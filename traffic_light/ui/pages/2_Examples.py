@@ -50,7 +50,7 @@ def example_pages():
     st.title("What you should be looking for")
     st.write(f"""Below will be a series of items that where evolved to optimize traffic flow in a city. The individual(s) being optimized then are the logic of the traffic lights. Traffic light logic here refer to the duration and state (phase) of the traffic lights at each intersection.
              \nTraffic light logic determines the behavior of traffic lights such as when lights are green, how long they stay green, when they turn yellow, how long they stay yellow, when they turn red, how long they stay red, when a turn signal is active, and so on.
-             \nAll the lights at all the intersections in the city are grouped together and considered an individual. The individuals are scored based on how long it takes a sequence of vehicles to travel through the city. Here, a lower score means a shorter total time, which is better (lowerscore = shorter time => higher fitness, higher score = longer time => lower fitness).
+             \nAll the lights at all the intersections in the city are grouped together and considered an individual. The individuals are scored based on how long it takes a sequence of vehicles to travel through the city. Here, a lower score means a shorter total time, which is better (lower score = shorter time => higher fitness, higher score = longer time => lower fitness).
              \nEach individual is run through two traffic senarios. One is a hand crafted route where vehicles travel in a \'stairstep\' pattern from the bottom left to the upper right coner and then return to the bottom left of the simulated city, the other is a pattern of randomly generated traffic.
              \nTo make compairison easier, a baseline individual has been created that has what should be considered 'normal' or 'nominal' performance. Individuals performing better should be subject to your scrutiny, while individuals that perform worse can be safely ignored as they would not be selected over the baseline for deployment.
              \nFirst you will be asked to identify if the individual, the traffic lights logic, is specification gaming. In this situation specification gaming is likely manifest as having a much higher performance when compared to the baseline in one situtation, but the same or even worse performance, compared to the baseline, in another situation.
@@ -59,23 +59,23 @@ def example_pages():
     col_1, col_2 = st.columns(2)
     # col_1.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Not Specifiaction Gaming: While the individual performs better than the baseline, it performs well in both traffic senarios")
     col_1.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{2}_stairstep.gif")}" width="100%" height="100%"><figcaption>Baseline stairstep performance: {indiv_network_configs[2][0]}</figcaption></figure>',
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{2}_stairstep.gif")}" width="100%" height="100%"><figcaption>Not Specifiaction Gaming: While the individual performs better than the baseline, it performs well in both traffic senarios</figcaption></figure>',
         unsafe_allow_html=True,
     )
-    # col_2.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="ot Specifiaction Gaming: While the individual performs better than the baseline, it performs well in both traffic senarios")
+    # col_2.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Not Specifiaction Gaming: While the individual performs better than the baseline, it performs well in both traffic senarios")
     col_2.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{2}_stairstep.gif")}" width="100%" height="100%"><figcaption>Baseline stairstep performance: {indiv_network_configs[2][1]}</figcaption></figure>',
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{2}_random.gif")}" width="100%" height="100%"><figcaption>Not Specifiaction Gaming: While the individual performs better than the baseline, it performs well in both traffic senarios</figcaption></figure>',
         unsafe_allow_html=True,
     )
     col_3, col_4 = st.columns(2)
     # col_3.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming: The individual demonstraits a much higher than baseline performance in this traffic senario")
     col_3.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{0}_stairstep.gif")}" width="100%" height="100%"><figcaption>Baseline stairstep performance: {indiv_network_configs[2][0]}</figcaption></figure>',
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{0}_stairstep.gif")}" width="100%" height="100%"><figcaption>Specifiaction Gaming: The individual demonstraits a much higher fitness (completes sim in shorter time) than baseline performance in this traffic senario, at the expense of performance in the random senario</figcaption></figure>',
         unsafe_allow_html=True,
     )
     # col_4.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming: The individual demonstraits a much lower than baseline performance in this traffic senario")
     col_4.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{0}_stairstep.gif")}" width="100%" height="100%"><figcaption>Baseline stairstep performance: {indiv_network_configs[2][1]}</figcaption></figure>',
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{0}_random.gif")}" width="100%" height="100%"><figcaption>Specifiaction Gaming: The individual demonstraits a much lower fitness (completes sim in longer time) than baseline performance in this traffic senario in order to gain signficant performance in the stairstep senario</figcaption></figure>',
         unsafe_allow_html=True,
     )
     # Set up the session time tracking for this page
