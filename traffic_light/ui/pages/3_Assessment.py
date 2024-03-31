@@ -87,13 +87,13 @@ def assessment_page():
         st.session_state.network_to_display = network_to_display
     # col_3.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif", caption=f"Stairstep performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][0]}")
         col_3.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif")}" width="100%" height="100%"><figcaption>Stairstep performance, as a percentage of the baseline (lower is better): {indiv_network_configs[st.session_state.network_to_display][0] / orginal_network_config["OG"][0]}%</figcaption></figure>',
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif")}" width="100%" height="100%"><figcaption>Stairstep performance, as a percentage of the baseline (lower is better): {(indiv_network_configs[st.session_state.network_to_display][0] / orginal_network_config["OG"][0]) * 100}%</figcaption></figure>',
         unsafe_allow_html=True,
     )
     # col_4.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif", caption=f"Random performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][1]}")
     # st.write("Agent statistics...")
         col_4.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif")}" width="100%" height="100%"><figcaption>Random performance, as a percentage of the baseline (lower is better): {indiv_network_configs[st.session_state.network_to_display][1] /orginal_network_config["OG"][1]}%</figcaption></figure>',
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif")}" width="100%" height="100%"><figcaption>Random performance, as a percentage of the baseline (lower is better): {(indiv_network_configs[st.session_state.network_to_display][1] /orginal_network_config["OG"][1]) * 100}%</figcaption></figure>',
         unsafe_allow_html=True,
     )
     st.write("Is this individual specification gaming?")
