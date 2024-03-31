@@ -26,7 +26,8 @@ def hide_side_navbar():
 def log_user_interaction(page, interaction_type, data=None):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     log_entry = f"{timestamp} - Page: {page}, Interaction: {interaction_type}, Data: {data}"
-    logging.info(log_entry)
+    # logging.info(log_entry)
+    print(log_entry)
 
 def switch_page(start_time: float):
     end_time = time.time()
@@ -37,14 +38,21 @@ def switch_page(start_time: float):
 
 def example_pages():
     hide_side_navbar()
-    st.title("Hand-picked examples of specification gaming in SUMO traffic simulation...")
-    st.write("Here are some Specification Gaming examples from the specific project at hand")
+    st.title("What you should be looking for")
+    st.write(f"""Below will be a series of items that where evolved to optimize traffic flow in a city. The individual(s) being optimized then are the logic of the traffic lights. Traffic light logic here refer to the duration and state (phase) of the traffic lights at each intersection.
+             \nTraffic light logic determines the behavior of traffic lights such as when lights are green, how long they stay green, when they turn yellow, how long they stay yellow, when they turn red, how long they stay red, when a turn signal is active, and so on.
+             \nAll the lights at all the intersections in the city are grouped together and considered an individual. The individuals are scored based on how long it takes a sequence of vehicles to travel through the city. Here, a lower score means a shorter total time, which is better (lowerscore = shorter time => higher fitness, higher score = longer time => lower fitness).
+             \nEach individual is run through two traffic senarios. One is a hand crafted route where vehicles travel in a \'stairstep\' pattern from the bottom left to the upper right coner and then return to the bottom left of the simulated city, the other is a pattern of randomly generated traffic.
+             \nTo make compairison easier, a baseline individual has been created that has what should be considered 'normal' or 'nominal' performance. Individuals performing better should be subject to your scrutiny, while individuals that perform worse can be safely ignored as they would not be selected over the baseline for deployment.
+             \nFirst you will be asked to identify if the individual, the traffic lights logic, is specification gaming. In this situation specification gaming is likely manifest as having a much higher performance when compared to the baseline in one situtation, but the same or even worse performance, compared to the baseline, in another situation.
+             \nPlease take a look at the individuals below and try to get an idea of what an individual that is specification gaming may perform on the traffic senarios.
+             \nLastly, please keep in mind that this experiment was specifically constructed in such a way that specification gaming would occur with a high degree of predictability and regularity.""")
     col_1, col_2 = st.columns(2)
-    col_1.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Not Specifiaction Gaming")
-    col_2.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Not Specifiaction Gaming")
+    col_1.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Not Specifiaction Gaming: While the individual performs better than the baseline, it performs well in both traffic senarios")
+    col_2.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="ot Specifiaction Gaming: While the individual performs better than the baseline, it performs well in both traffic senarios")
     col_3, col_4 = st.columns(2)
-    col_3.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming")
-    col_4.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming")
+    col_3.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming: The individual demonstraits a much higher than baseline performance in this traffic senario")
+    col_4.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming: The individual demonstraits a much lower than baseline performance in this traffic senario")
     # Set up the session time tracking for this page
     if 'examples_start_time' not in st.session_state:
         st.session_state.examples_start_time = time.time()
