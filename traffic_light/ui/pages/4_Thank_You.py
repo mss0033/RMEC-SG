@@ -51,7 +51,7 @@ def thank_you_page():
 def main():
     if 'thanks_navbar_hidden' not in st.session_state:
         # Hide the side navbar, users need to flow through using the buttons and forms
-        st.set_page_config(initial_sidebar_state="collapsed")
+        st.set_page_config(initial_sidebar_state="collapsed", layout="wide")
         st.session_state.thanks_navbar_hidden = True
     # If the current page is not stored in the session state, set it to the welcome page
     if 'next_page' not in st.session_state:

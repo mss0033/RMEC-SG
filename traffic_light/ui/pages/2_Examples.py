@@ -1,3 +1,4 @@
+import base64
 import streamlit as st
 import time
 import logging
@@ -10,6 +11,13 @@ NEXT_PAGE_ID = "pages/3_Assessment.py"
 
 # Set up logging
 logging.basicConfig(filename='user_interactions.log', level=logging.INFO)
+
+def gif_from_local_file(filepath: str):
+    file = open(file=filepath, mode="rb")
+    contents = file.read()
+    data_url = base64.b64encode(contents).decode("utf-8")
+    file.close()
+    return data_url
 
 def hide_side_navbar():
     st.markdown(
@@ -37,6 +45,7 @@ def switch_page(start_time: float):
     # TODO check for the Assessment start time and reset it if present
 
 def example_pages():
+    indiv_network_configs = {0: (11799, 20369), 1: (15350, 10689), 2: (17808, 4007), 3:(12859, 21382), 4: (13197, 19226), 5: (13485, 18657), 6: (12967, 21235), 7: (12847, 20249), 30: (13571, 19907), 145: (13621, 22518)}
     hide_side_navbar()
     st.title("What you should be looking for")
     st.write(f"""Below will be a series of items that where evolved to optimize traffic flow in a city. The individual(s) being optimized then are the logic of the traffic lights. Traffic light logic here refer to the duration and state (phase) of the traffic lights at each intersection.
@@ -48,11 +57,27 @@ def example_pages():
              \nPlease take a look at the individuals below and try to get an idea of what an individual that is specification gaming may perform on the traffic senarios.
              \nLastly, please keep in mind that this experiment was specifically constructed in such a way that specification gaming would occur with a high degree of predictability and regularity.""")
     col_1, col_2 = st.columns(2)
-    col_1.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Not Specifiaction Gaming: While the individual performs better than the baseline, it performs well in both traffic senarios")
-    col_2.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="ot Specifiaction Gaming: While the individual performs better than the baseline, it performs well in both traffic senarios")
+    # col_1.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Not Specifiaction Gaming: While the individual performs better than the baseline, it performs well in both traffic senarios")
+    col_2.markdown(
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{2}_stairstep.gif")}" width="100%" height="100%"><figcaption>Baseline stairstep performance: {indiv_network_configs[2][0]}</figcaption></figure>',
+        unsafe_allow_html=True,
+    )
+    # col_2.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="ot Specifiaction Gaming: While the individual performs better than the baseline, it performs well in both traffic senarios")
+    col_2.markdown(
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{2}_stairstep.gif")}" width="100%" height="100%"><figcaption>Baseline stairstep performance: {indiv_network_configs[2][1]}</figcaption></figure>',
+        unsafe_allow_html=True,
+    )
     col_3, col_4 = st.columns(2)
-    col_3.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming: The individual demonstraits a much higher than baseline performance in this traffic senario")
-    col_4.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming: The individual demonstraits a much lower than baseline performance in this traffic senario")
+    # col_3.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming: The individual demonstraits a much higher than baseline performance in this traffic senario")
+    col_2.markdown(
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{0}_stairstep.gif")}" width="100%" height="100%"><figcaption>Baseline stairstep performance: {indiv_network_configs[2][0]}</figcaption></figure>',
+        unsafe_allow_html=True,
+    )
+    # col_4.image("traffic_light/ui/resources/individual_sim_videos/Traffic_sim_stairstep.gif", caption="Specifiaction Gaming: The individual demonstraits a much lower than baseline performance in this traffic senario")
+    col_2.markdown(
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{0}_stairstep.gif")}" width="100%" height="100%"><figcaption>Baseline stairstep performance: {indiv_network_configs[2][1]}</figcaption></figure>',
+        unsafe_allow_html=True,
+    )
     # Set up the session time tracking for this page
     if 'examples_start_time' not in st.session_state:
         st.session_state.examples_start_time = time.time()
@@ -61,7 +86,7 @@ def example_pages():
 def main():
     if 'examples_navbar_hidden' not in st.session_state:
         # Hide the side navbar, users need to flow through using the buttons and forms
-        st.set_page_config(initial_sidebar_state="collapsed")
+        st.set_page_config(initial_sidebar_state="collapsed", layout="wide")
         st.session_state.examples_navbar_hidden = True
     if 'next_page' not in st.session_state:
         st.session_state.next_page = WELCOME_PAGE_ID

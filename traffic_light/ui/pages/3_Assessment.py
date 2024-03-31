@@ -1,3 +1,4 @@
+import base64
 import streamlit as st
 import time
 import logging
@@ -11,6 +12,13 @@ NEXT_PAGE_ID = "pages/4_Thank_You.py"
 
 # Set up logging
 logging.basicConfig(filename='user_interactions.log', level=logging.INFO)
+
+def gif_from_local_file(filepath: str):
+    file = open(file=filepath, mode="rb")
+    contents = file.read()
+    data_url = base64.b64encode(contents).decode("utf-8")
+    file.close()
+    return data_url
 
 def hide_side_navbar():
     st.markdown(
@@ -63,15 +71,31 @@ def assessment_page():
              \nIf you select 'Yes', and addtional dropdown menu will appear that will allow you to select a mitigation strategy. Please select one of the strategies and then press the submit button."""
     st.write(message)
     col_1, col_2 = st.columns(2)
-    col_1.image(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_stairstep.gif", caption=f"Baseline stairstep performance: {orginal_network_config['OG'][0]}")
-    col_2.image(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_random.gif", caption=f"Baseline random performance: {orginal_network_config['OG'][1]}")
+    # col_1.image(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_stairstep.gif", caption=f"Baseline stairstep performance: {orginal_network_config['OG'][0]}")
+    col_1.markdown(
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_stairstep.gif")}" width="100%" height="100%"><figcaption>Baseline stairstep performance: {orginal_network_config["OG"][0]}</figcaption></figure>',
+        unsafe_allow_html=True,
+    )
+    # col_2.image(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_random.gif", caption=f"Baseline random performance: {orginal_network_config['OG'][1]}")
+    col_2.markdown(
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_random.gif")}" width="100%" height="100%"><figcaption>Baseline stairstep performance: {orginal_network_config["OG"][1]}</figcaption></figure>',
+        unsafe_allow_html=True,
+    )
     col_3, col_4 = st.columns(2)
     network_to_display = random.choice(list(indiv_network_configs.keys()))
     if 'network_to_display' not in st.session_state:
         st.session_state.network_to_display = network_to_display
-    col_3.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif", caption=f"Stairstep performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][0]}")
-    col_4.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif", caption=f"Random performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][1]}")
+    # col_3.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif", caption=f"Stairstep performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][0]}")
+        col_3.markdown(
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif")}" width="100%" height="100%"><Random performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][0]}</figcaption></figure>',
+        unsafe_allow_html=True,
+    )
+    # col_4.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif", caption=f"Random performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][1]}")
     # st.write("Agent statistics...")
+        col_4.markdown(
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif")}" width="100%" height="100%"><figcaption>Random performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][1]}</figcaption></figure>',
+        unsafe_allow_html=True,
+    )
     st.write("Is this individual specification gaming?")
     # Set up the checkboxes
     yes_col, no_col = st.columns(2)
@@ -98,7 +122,7 @@ def assessment_page():
 def main():
     if 'assessment_navbar_hidden' not in st.session_state:
         # Hide the side navbar, users need to flow through using the buttons and forms
-        st.set_page_config(initial_sidebar_state="collapsed")
+        st.set_page_config(initial_sidebar_state="collapsed", layout="wide")
         st.session_state.assessment_navbar_hidden = True
     if 'next_page' not in st.session_state:
         st.session_state.next_page = WELCOME_PAGE_ID
@@ -107,6 +131,8 @@ def main():
         assessment_page()
     else:
         st.switch_page(st.session_state.next_page)
+    
+
 
 if __name__ == "__main__":
     main()
