@@ -2,6 +2,7 @@ import base64
 import streamlit as st
 import time
 import logging
+import random
 import os
 import uuid
 
@@ -31,16 +32,17 @@ def hide_side_navbar():
         unsafe_allow_html=True,
     )
 
-def log_user_interaction(page, interaction_type, data=None):
+def log_user_interaction(user_id, page, interaction_type, data=None):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    log_entry = f"{timestamp} - Page: {page}, Interaction: {interaction_type}, Data: {data}"
+    log_entry = f"{timestamp} - User ID: {user_id}, Page: {page}, Interaction: {interaction_type}, Data: {data}"
+    os.write(1, log_entry.encode('utf-8'))
     logging.info(log_entry)
     print(log_entry)
 
 def switch_page(start_time: float):
     end_time = time.time()
     time_spent = end_time - start_time
-    log_user_interaction("Examples", "Time Spent", time_spent)
+    log_user_interaction(st.session_state.user_id, "Examples", "Time Spent", time_spent)
     st.session_state.next_page = NEXT_PAGE_ID
     # TODO check for the Assessment start time and reset it if present
 
@@ -95,7 +97,7 @@ def example_pages():
         f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{0}_random.gif")}" width="100%" height="100%"><figcaption>However, Riley didn\'t get that performance for free. In the clip above, you can see that Riley is not able to flow the random traffic without causing gridlock. While some perfomance trade offs are acceptable, we don\'t want a set that ruins the perfomance of one senario to gain an advantage in another. Please note, the clip starts at a normal speed, and then speads up so the full performance of the set can be seen.</figcaption></figure>',
         unsafe_allow_html=True,
     )
-    
+
     st.markdown("---")
     # Set up the session time tracking for this page
     if 'examples_start_time' not in st.session_state:
@@ -103,6 +105,9 @@ def example_pages():
     st.button("Next", key=f"examples_next_button", on_click=switch_page, args=(st.session_state.examples_start_time,))
 
 def main():
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = random.randint(1000000, 9999999)
+        log_user_interaction(st.session_state.user_id, "Examples", "User ID assigned", f"{st.session_state.user_id}")
     if 'examples_navbar_hidden' not in st.session_state:
         # Hide the side navbar, users need to flow through using the buttons and forms
         st.set_page_config(initial_sidebar_state="collapsed", layout="wide")

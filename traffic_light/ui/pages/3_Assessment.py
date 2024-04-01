@@ -44,18 +44,19 @@ def set_mitigation_strat_selectbox_vis(is_spec_gaming_checked: bool) -> str:
     else:
         return 'hidden'
 
-def log_user_interaction(page, interaction_type, data=None):
+def log_user_interaction(user_id, page, interaction_type, data=None):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    log_entry = f"{timestamp} - Page: {page}, Interaction: {interaction_type}, Data: {data}"
+    log_entry = f"{timestamp} - User ID: {user_id}, Page: {page}, Interaction: {interaction_type}, Data: {data}"
+    os.write(1, log_entry.encode('utf-8'))
     logging.info(log_entry)
     print(log_entry)
 
 def switch_page(start_time: float, selection: bool, selection_conf: float, mitigation_strat: str = ''):
     end_time = time.time()
     time_spent = end_time - start_time
-    log_user_interaction("Assessment", "Time Spent", time_spent)
-    log_user_interaction(f"User's confidence indiviual {st.session_state.network_to_display} {'IS SG' if selection else 'IS NOT SG'}: {st.session_state.is_spec_gaming_confidence}", "Confidence Input")
-    log_user_interaction(f"Was Individual {st.session_state.network_to_display} Specification Gaming: {True if st.session_state.network_to_display == 0 else False}", "SG Selection")
+    log_user_interaction(st.session_state.user_id, "Assessment", "Time Spent", time_spent)
+    log_user_interaction(st.session_state.user_id, "Assessment", "Confidence Input", f"User's confidence indiviual {st.session_state.network_to_display} {'IS SG' if selection else 'IS NOT SG'}: {st.session_state.is_spec_gaming_confidence}")
+    log_user_interaction(st.session_state.user_id, "Assessment", "SG Selection", f"Was Individual {st.session_state.network_to_display} Specification Gaming: {True if st.session_state.network_to_display == 0 else False}")
     # log_user_interaction("Assessment", "Mitigation Strategy Selected", mitigation_strat)
     st.session_state.next_page = NEXT_PAGE_ID
     # TODO check for the Thank You start time and reset it if present
@@ -138,6 +139,9 @@ def assessment_page():
     # print(st.session_state.mitigation_strat)
 
 def main():
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = random.randint(1000000, 9999999)
+        log_user_interaction(st.session_state.user_id, "Assessment", "User ID assigned", f"{st.session_state.user_id}")
     if 'assessment_navbar_hidden' not in st.session_state:
         # Hide the side navbar, users need to flow through using the buttons and forms
         st.set_page_config(initial_sidebar_state="collapsed", layout="wide")

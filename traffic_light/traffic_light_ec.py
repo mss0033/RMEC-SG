@@ -281,18 +281,20 @@ def modify_fitness_function():
 
 # Take actions against SG individuals
 def mitigate_sg_individuals(population: List[TLLogicSet], generation: int, run_label: str, strategy: str):
+    if not strategy:
+        return
     # Identify the individuals to mitigate
     individuals_to_mitigate = identify_specification_gaming_individuals(population=population)
     # Make a record of them
     write_potential_sg_indivs_to_file(potential_sg_indivs=individuals_to_mitigate, generation=generation, run_label=run_label)
-    if not strategy or strategy == STRAT_REPLACE:
-        # For each one, replce it with a clone of an indiv not identified as SG
+    if strategy == STRAT_REPLACE:
+        # For each one, replce it with a clone of an indiv not identified as potentially SG
         for index, _ in individuals_to_mitigate.items():
             replace_indiv_with_clone(population=population, index_to_replace=index, invalid_indices=list(individuals_to_mitigate.keys()))
-    if strategy == STRAT_PENALIZE:
+    elif strategy == STRAT_PENALIZE:
         for index, _ in individuals_to_mitigate.items():
             penalize_indiv_fitness(population=population, index_to_penalize=index, penalty=(population[index].fitness * 0.5))
-    if strategy == STRAT_MOD_FITNESS:
+    elif strategy == STRAT_MOD_FITNESS:
         modify_fitness_function()
     # Write the mitigated population back to the files
     write_population_to_files(population=population, generation=generation, run_label=run_label)
@@ -319,7 +321,7 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
         # Evaluate fitness of each individual
         evaluate_population(population=population, generation=initialize_from_existing[1] - 1, run_label=run_label)
         # Mitigate any specification gamed individuals
-        if initialize_from_existing[1] % 10 == 0:
+        if initialize_from_existing[1] % 5 == 0:
             mitigate_sg_individuals(population=population, generation=initialize_from_existing[1] - 1, run_label=run_label, strategy=STRAT_REPLACE)
     else:
         evaluate_population(population=population, generation=0, run_label=run_label)
@@ -350,7 +352,7 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
         # Evaluate the population
         evaluate_population(population=population, generation=generation, run_label=run_label)
         # Mitigate any specification gamed individuals
-        if (generation + 1) % 10 == 0:
+        if (generation + 1) % 5 == 0:
             mitigate_sg_individuals(population=population, generation=generation, run_label=run_label, strategy=STRAT_REPLACE)
         # Print some population stats
         print(f"Generation {generation + 1}")
@@ -369,9 +371,9 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
 
 # Overwrite the main function cause that seems to be the thing to do in python
 if __name__ == "__main__":
-    print(str(evolutionary_algorithm(population_size=250, num_generations=50, initialize_from_existing=(True, 10), run_label="Golden_Run_Attempt_6_Gen_10_Replace_SG_Indivs")))
+    print(str(evolutionary_algorithm(population_size=250, num_generations=50, initialize_from_existing=(True, 5), run_label="Golden_Run_Attempt_6_From_Gen_5_Replace_SG_Indivs_Every_5_Gens")))
 
-# traci.start(SUMO_GUI_CMD + ["-n", f"{NETWORK_CONFIGS_DIR}/Golden_Run_Attempt_6/generation_10/grid_network_145_modified.net.xml"])
+# traci.start(SUMO_GUI_CMD_RANDOM + ["-n", f"{NETWORK_CONFIGS_DIR}/Golden_Run_Attempt_6_Gen_10_Replace_SG_Indivs/best_individuals/grid_network_best_indiv_Golden_Run_Attempt_6_Gen_10_Replace_SG_Indivs.net.xml"])
 # # pick an arbitrary junction
 # # junctionID = traci.junction.getIDList()[0]
 # # # subscribe around that junction with a sufficiently large

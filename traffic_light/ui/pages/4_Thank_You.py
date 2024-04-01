@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import logging
+import random
 import os
 import uuid
 
@@ -23,16 +24,17 @@ def hide_side_navbar():
         unsafe_allow_html=True,
     )
 
-def log_user_interaction(page, interaction_type, data=None):
+def log_user_interaction(user_id, page, interaction_type, data=None):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    log_entry = f"{timestamp} - Page: {page}, Interaction: {interaction_type}, Data: {data}"
+    log_entry = f"{timestamp} - User ID: {user_id}, Page: {page}, Interaction: {interaction_type}, Data: {data}"
+    os.write(1, log_entry.encode('utf-8'))
     logging.info(log_entry)
     print(log_entry)
 
 def switch_page(start_time: float):
     end_time = time.time()
     time_spent = end_time - start_time
-    log_user_interaction("Thank You", "Time Spent", time_spent)
+    log_user_interaction(st.session_state.user_id, "Thank You", "Time Spent", time_spent)
     st.session_state.next_page = WELCOME_PAGE_ID
     # If they go back around, reset the welcome start time
     st.session_state.welcome_start_time = time.time()
@@ -42,13 +44,17 @@ def thank_you_page():
     hide_side_navbar()
     # Set up the page title and content
     st.title("The End")
-    st.write("Thank you for your participation!")
+    st.write("Thank you for your participation! Please provide the code below to get credit for completing the study.")
+    st.write(f"Completion code: {st.session_state.user_id}")
     # Set up the session time tracking for this page
     if 'thank_you_start_time' not in st.session_state:
         st.session_state.thank_you_start_time = time.time()
     # st.button("Restart", key=f"thank_you_restart_button", on_click=switch_page, args=(st.session_state.thank_you_start_time,))
 
 def main():
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = random.randint(1000000, 9999999)
+        log_user_interaction(st.session_state.user_id, "Thank you", "User ID assigned", f"{st.session_state.user_id}")
     if 'thanks_navbar_hidden' not in st.session_state:
         # Hide the side navbar, users need to flow through using the buttons and forms
         st.set_page_config(initial_sidebar_state="collapsed", layout="wide")

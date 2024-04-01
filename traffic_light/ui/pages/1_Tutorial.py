@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import logging
+import random
 import os
 import uuid
 
@@ -23,16 +24,17 @@ def hide_side_navbar():
         unsafe_allow_html=True,
     )
 
-def log_user_interaction(page, interaction_type, data=None):
+def log_user_interaction(user_id, page, interaction_type, data=None):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    log_entry = f"{timestamp} - Page: {page}, Interaction: {interaction_type}, Data: {data}"
+    log_entry = f"{timestamp} - User ID: {user_id}, Page: {page}, Interaction: {interaction_type}, Data: {data}"
+    os.write(1, log_entry.encode('utf-8'))
     logging.info(log_entry)
     print(log_entry)
 
 def switch_page(start_time: float):
     end_time = time.time()
     time_spent = end_time - start_time
-    log_user_interaction("Tutorial", "Time Spent", time_spent)
+    log_user_interaction(st.session_state.user_id, "Tutorial", "Time Spent", time_spent)
     st.session_state.next_page = NEXT_PAGE_ID
     # TODO check for the Examples start time and reset it if present
 
@@ -50,7 +52,7 @@ def tutorial_pages():
     col_2.image("traffic_light/ui/resources/SG_example_images/boat_race.gif", caption=f"A boat race game playing agent was scored based on the score of the game. The agent learned it could achieve a higher score by simply collecting the power ups repeatedly.")
     col_3.image("traffic_light/ui/resources/SG_example_images/slide_to_the_right.gif", caption=f"An evovled created \'discovered\' and exploit in the physics engine that allowed it to simply glide to the side instead of running")
     st.image("traffic_light/ui/resources/SG_example_images/quilt_of_sg.gif", caption=f"A collection of similar instances across a wide range of optimization systems.")
-    
+
     st.markdown("---")
     st.write(f"""From the above examples a common theme emerges. All of the products of optimization found unexpected, and nominally undesirable, methods of technicnally satisfying their optimization function while not having the desired emergent properties or behaviors.
              \nWhile some of these exmaples may be ammusing, unfortunately not all examples are so funny. In more serious sitations agents trained to drive cars or control planes may adopt niche behavior that scores well according to some optimization process but would put people at dire risk.
@@ -64,6 +66,9 @@ def tutorial_pages():
     st.button("Next", key=f"tutorial_next_button", on_click=switch_page, args=(st.session_state.tutorial_start_time,))
 
 def main():
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = random.randint(1000000, 9999999)
+        log_user_interaction(st.session_state.user_id, "Tutorial", "User ID assigned", f"{st.session_state.user_id}")
     if 'tutorial_navbar_hidden' not in st.session_state:
         # Hide the side navbar, users need to flow through using the buttons and forms
         st.set_page_config(initial_sidebar_state="collapsed", layout="wide")
