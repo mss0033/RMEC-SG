@@ -12,6 +12,9 @@ WELCOME_PAGE_ID = "Welcome.py"
 THIS_PAGE_ID = "pages/2_Examples.py"
 NEXT_PAGE_ID = "pages/3_Assessment.py"
 
+INDIV_NETWORK_CONFIGS = {0: (11799, 20369), 2: (17808, 4007)}
+ORIGINAL_NETWORK_CONFIG = {'OG': (17889, 3791)}
+
 # Set up logging
 logging.basicConfig(filename='user_interactions.log', level=logging.INFO)
 
@@ -69,8 +72,6 @@ def switch_page(start_time: float):
     # TODO check for the Assessment start time and reset it if present
 
 def example_pages():
-    indiv_network_configs = {0: (11799, 20369), 1: (15350, 10689), 2: (17808, 4007), 3:(12859, 21382), 4: (13197, 19226), 5: (13485, 18657), 6: (12967, 21235), 7: (12847, 20249), 30: (13571, 19907), 145: (13621, 22518)}
-    orginal_network_config = {'OG': (17889, 3791)}
     hide_side_navbar()
     st.title("What you should be looking for")
     st.write(f"""Below will be a series of clip sets which show the flow of simulated traffic in a simple simulated city. The logic which controlls the traffic lights within the city has been computationally optimized to enhance the flow of traffic in the simple model city. The metric used to compare one set of traffic light logic to another is the time it takes for a simulation to complete.

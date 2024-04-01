@@ -12,6 +12,9 @@ WELCOME_PAGE_ID = "Welcome.py"
 THIS_PAGE_ID = "pages/3_Assessment.py"
 NEXT_PAGE_ID = "pages/4_Thank_You.py"
 
+INDIV_NETWORK_CONFIGS = {0: (11799, 20369), 2: (17808, 4007)}
+ORIGINAL_NETWORK_CONFIG = {'OG': (17889, 3791)}
+
 # Set up logging
 logging.basicConfig(filename='user_interactions.log', level=logging.INFO)
 
@@ -64,8 +67,9 @@ def switch_page(start_time: float, selection: bool, selection_conf: float, mitig
     end_time = time.time()
     time_spent = end_time - start_time
     log_user_interaction(st.session_state.user_id, "Assessment", "Time Spent", time_spent)
-    log_user_interaction(st.session_state.user_id, "Assessment", "Confidence Input", f"User's confidence indiviual {st.session_state.network_to_display} {'IS SG' if selection else 'IS NOT SG'}: {st.session_state.is_spec_gaming_confidence}")
-    log_user_interaction(st.session_state.user_id, "Assessment", "SG Selection", f"Was Individual {st.session_state.network_to_display} Specification Gaming: {True if st.session_state.network_to_display == 0 else False}")
+    log_user_interaction(st.session_state.user_id, "Assessment", "SG Selection", f"{selection}")
+    log_user_interaction(st.session_state.user_id, "Assessment", "Confidence Input", f"{selection_conf}")
+    log_user_interaction(st.session_state.user_id, "Assessment", "Ground Truth", f"{True if st.session_state.network_to_display == 0 else False}")
     # log_user_interaction("Assessment", "Mitigation Strategy Selected", mitigation_strat)
     st.session_state.next_page = NEXT_PAGE_ID
     # TODO check for the Thank You start time and reset it if present
@@ -83,8 +87,6 @@ def set_mitigation_strat_selectbox_vis(is_spec_gaming_checked: bool) -> str:
         return 'hidden'
 
 def assessment_page():
-    indiv_network_configs = {0: (11799, 20369), 2: (17808, 4007)}
-    orginal_network_config = {'OG': (17889, 3791)}
     # Make sure the side navbar is hidden
     hide_side_navbar()
     # mitigation_strats = ["Penalize Individual", "Remove Individual from Population", "Modify Fitness"]
@@ -99,12 +101,12 @@ def assessment_page():
     col_1, col_2 = st.columns(2)
     # col_1.image(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_stairstep.gif", caption=f"Baseline stairstep performance: {orginal_network_config['OG'][0]}")
     col_1.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_stairstep.gif")}" width="100%" height="100%"><figcaption>Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {orginal_network_config["OG"][0]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_stairstep.gif")}" width="100%" height="100%"><figcaption>Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG["OG"][0]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
         unsafe_allow_html=True,
     )
     # col_2.image(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_random.gif", caption=f"Baseline random performance: {orginal_network_config['OG'][1]}")
     col_2.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_random.gif")}" width="100%" height="100%"><figcaption>Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {orginal_network_config["OG"][1]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_random.gif")}" width="100%" height="100%"><figcaption>Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG["OG"][1]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
         unsafe_allow_html=True,
     )
 
@@ -115,19 +117,19 @@ def assessment_page():
 
     # If a network to display has already been choosen, don't change it
     if 'network_to_display' not in st.session_state:
-        st.session_state.network_to_display = random.choice(list(indiv_network_configs.keys()))
+        st.session_state.network_to_display = random.choice(list(INDIV_NETWORK_CONFIGS.keys()))
     
     # Initialize columns to display the selected netowrk performance
     col_3, col_4 = st.columns(2)
     # col_3.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif", caption=f"Stairstep performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][0]}")
     col_3.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif")}" width="100%" height="100%"><figcaption>Set Sammie\'s Stairstep performance, as a percentage of the baseline (lower is better): {(indiv_network_configs[st.session_state.network_to_display][0] / orginal_network_config["OG"][0]) * 100}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif")}" width="100%" height="100%"><figcaption>Set Sammie\'s Stairstep performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][0] / ORIGINAL_NETWORK_CONFIG["OG"][0]) * 100):.2f}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
         unsafe_allow_html=True,
     )
     # col_4.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif", caption=f"Random performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][1]}")
     # st.write("Agent statistics...")
     col_4.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif")}" width="100%" height="100%"><figcaption>Set Sammie\'s Random performance, as a percentage of the baseline (lower is better): {(indiv_network_configs[st.session_state.network_to_display][1] /orginal_network_config["OG"][1]) * 100}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
+        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif")}" width="100%" height="100%"><figcaption>Set Sammie\'s Random performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][1] /ORIGINAL_NETWORK_CONFIG["OG"][1]) * 100):.2f}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
         unsafe_allow_html=True,
     )
     
