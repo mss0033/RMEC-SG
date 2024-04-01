@@ -50,16 +50,18 @@ def log_user_interaction(page, interaction_type, data=None):
     logging.info(log_entry)
     print(log_entry)
 
-def switch_page(start_time: float, mitigation_strat: str = ''):
+def switch_page(start_time: float, selection: bool, selection_conf: float, mitigation_strat: str = ''):
     end_time = time.time()
     time_spent = end_time - start_time
     log_user_interaction("Assessment", "Time Spent", time_spent)
+    log_user_interaction(f"User's confidence indiviual {st.session_state.network_to_display} {'IS SG' if selection else 'IS NOT SG'}: {st.session_state.is_spec_gaming_confidence}", "Confidence Input")
+    log_user_interaction(f"Was Individual {st.session_state.network_to_display} Specification Gaming: {True if st.session_state.network_to_display == 0 else False}", "SG Selection")
     # log_user_interaction("Assessment", "Mitigation Strategy Selected", mitigation_strat)
     st.session_state.next_page = NEXT_PAGE_ID
     # TODO check for the Thank You start time and reset it if present
 
 def assessment_page():
-    indiv_network_configs = {0: (11799, 20369), 1: (15350, 10689), 2: (17808, 4007), 3:(12859, 21382), 4: (13197, 19226), 5: (13485, 18657), 6: (12967, 21235), 7: (12847, 20249), 30: (13571, 19907), 145: (13621, 22518)}
+    indiv_network_configs = {0: (11799, 20369), 2: (17808, 4007)}
     orginal_network_config = {'OG': (17889, 3791)}
     # Make sure the side navbar is hidden
     hide_side_navbar()
@@ -108,13 +110,11 @@ def assessment_page():
     )
     
     st.markdown("---")
-    st.write("Is this individual specification gaming?")
+    st.write("Is set Sammie specification gaming?")
     # Set up the checkboxes
     yes_col, no_col = st.columns(2)
-    with yes_col:
-        is_spec_gaming = st.checkbox("Yes", key=f"assessment_yes_col_checkbox", on_change=yes_checkbox_on_change)
-    with no_col:
-        is_not_spec_gaming = st.checkbox("No", key=f"assessment_no_col_checkbox", on_change=no_checkbox_on_change)
+    is_spec_gaming = yes_col.checkbox("Yes", key=f"assessment_yes_col_checkbox", on_change=yes_checkbox_on_change)
+    is_not_spec_gaming = no_col.checkbox("No", key=f"assessment_no_col_checkbox", on_change=no_checkbox_on_change)
     # # Set up a selection box for the mitigation strats
     # if 'assessment_mitigation_strat_select_box' not in st.session_state:
     #     st.session_state.assessment_mitigation_strat_select_box = None
@@ -125,11 +125,16 @@ def assessment_page():
     #              \nRemoving an individual is expected to be useful at preventing clear and obvious specification gamed behavior/qualities from spreading to other memebers of the population. Therefore, it is likely to be a better option if an individual is displaying a large disparity in senario performance
     #              \nModifiying the fitness function is expected to be useful if it is believed that the very assessment of fitness itself is flawed. This can radically alter the performance of the optimization and may cause general instibility. Therefore, it is only advisable if it is obvious that there is some inherent problem with how fitness is being evaluated.""")
     # print(f"Selected strat: {selected_strat}")
+    # Set up a selection box for the mitigation strats
+    if 'is_spec_gaming_confidence' not in st.session_state:
+        st.session_state.is_spec_gaming_confidence = -1
+    st.session_state.is_spec_gaming_confidence = st.number_input("Please enter a confidence (%) as a number from 0 to 100", min_value=0, max_value=100, value=50, key=f"is_spec_gaming_confidence_input", disabled=(not is_spec_gaming and not is_not_spec_gaming))
+    
     # Set up the session time tracking for this page
     if 'assessment_start_time' not in st.session_state:
         st.session_state.assessment_start_time = time.time()
     # submitt_button = st.button("Submit", key=f"assessment_submit_button", on_click=switch_page, args=(st.session_state.assessment_start_time, st.session_state.assessment_mitigation_strat_select_box))
-    submitt_button = st.button("Submit", key=f"assessment_submit_button", on_click=switch_page, args=(st.session_state.assessment_start_time, ''))
+    submitt_button = st.button("Submit", key=f"assessment_submit_button", on_click=switch_page, args=(st.session_state.assessment_start_time, True if is_spec_gaming else False, st.session_state.is_spec_gaming_confidence, ''))
     # print(st.session_state.mitigation_strat)
 
 def main():
