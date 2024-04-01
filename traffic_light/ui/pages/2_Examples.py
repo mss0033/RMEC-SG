@@ -1,10 +1,12 @@
 import base64
+import json
 import streamlit as st
 import time
 import logging
 import random
 import os
-import uuid
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 WELCOME_PAGE_ID = "Welcome.py"
 THIS_PAGE_ID = "pages/2_Examples.py"
@@ -32,9 +34,29 @@ def hide_side_navbar():
         unsafe_allow_html=True,
     )
 
+# Function to initialize the connection to Google Sheets
+# Function to initialize the connection to Google Sheets
+def init_connection():
+    # Load secrets directly from Streamlit's secrets management feature
+    secrets = st.secrets["google"]
+    service_account_info = json.loads(secrets["service_account"])
+    scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
+    client = gspread.authorize(creds)
+    return client
+
+# Function to insert data into the Google Sheet
+def insert_into_sheet(timestamp, user_id, page, interaction_type, data=None):
+    if 'sheets_client' not in st.session_state:
+        # Initialize connection to Google Sheets
+        st.session_state.sheets_client = init_connection()
+    sheet = st.session_state.sheets_client.open('RMEC-SG-2024-Responses').sheet1
+    sheet.append_row([timestamp, user_id, page, interaction_type, data])
+
 def log_user_interaction(user_id, page, interaction_type, data=None):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     log_entry = f"{timestamp} - User ID: {user_id}, Page: {page}, Interaction: {interaction_type}, Data: {data}"
+    insert_into_sheet(timestamp, user_id, page, interaction_type, data)
     os.write(1, log_entry.encode('utf-8'))
     logging.info(log_entry)
     print(log_entry)

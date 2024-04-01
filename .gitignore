@@ -3,4 +3,5 @@ traffic_light/ui/__pycache__
 traffic_light/network_configs/old_runs
 traffic_light/network_configs/Run_*
 traffic_light/network_configs/Golden_Run_*
+traffic_light/ui/.streamlit/secrets.toml
 user_interactions.log
