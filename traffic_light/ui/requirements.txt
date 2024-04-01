@@ -1,4 +1,5 @@
 streamlit
 libsumo
 gspread
+pyperclip
 oauth2client

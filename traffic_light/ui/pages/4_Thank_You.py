@@ -3,6 +3,7 @@ import streamlit as st
 import time
 import logging
 import random
+import pyperclip
 import os
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -67,6 +68,9 @@ def thank_you_page():
     st.title("The End")
     st.write("Thank you for your participation! Please provide the code below to get credit for completing the study.")
     st.write(f"Completion code: {st.session_state.user_id}")
+    # Add a button to copy the text to the clipboard
+    copy_button = st.button('Copy to Clipboard', on_click=pyperclip.copy(st.session_state.user_id))
+
     # Set up the session time tracking for this page
     if 'thank_you_start_time' not in st.session_state:
         st.session_state.thank_you_start_time = time.time()
