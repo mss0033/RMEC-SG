@@ -371,7 +371,7 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
 
 # Overwrite the main function cause that seems to be the thing to do in python
 if __name__ == "__main__":
-    print(str(evolutionary_algorithm(population_size=250, num_generations=50, initialize_from_existing=(True, 5), run_label="Golden_Run_Attempt_6_From_Gen_5_Replace_SG_Indivs_Every_5_Gens")))
+    print(str(evolutionary_algorithm(population_size=250, num_generations=50, initialize_from_existing=(True, 17), run_label="Golden_Run_Attempt_6_From_Gen_5_Replace_SG_Indivs_Every_5_Gens")))
 
 # traci.start(SUMO_GUI_CMD_RANDOM + ["-n", f"{NETWORK_CONFIGS_DIR}/Golden_Run_Attempt_6_Gen_10_Replace_SG_Indivs/best_individuals/grid_network_best_indiv_Golden_Run_Attempt_6_Gen_10_Replace_SG_Indivs.net.xml"])
 # # pick an arbitrary junction
