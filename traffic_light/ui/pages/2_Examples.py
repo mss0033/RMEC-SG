@@ -38,7 +38,6 @@ def hide_side_navbar():
     )
 
 # Function to initialize the connection to Google Sheets
-# Function to initialize the connection to Google Sheets
 def init_connection():
     # Load secrets directly from Streamlit's secrets management feature
     secrets = st.secrets["google"]
@@ -128,13 +127,13 @@ def example_pages():
     st.button("Next", key=f"examples_next_button", on_click=switch_page, args=(st.session_state.examples_start_time,))
 
 def main():
-    if 'user_id' not in st.session_state:
-        st.session_state.user_id = random.randint(1000000, 9999999)
-        log_user_interaction(st.session_state.user_id, "Examples", "User ID assigned", f"{st.session_state.user_id}")
     if 'examples_navbar_hidden' not in st.session_state:
         # Hide the side navbar, users need to flow through using the buttons and forms
         st.set_page_config(initial_sidebar_state="collapsed", layout="wide")
         st.session_state.examples_navbar_hidden = True
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = random.randint(1000000, 9999999)
+        log_user_interaction(st.session_state.user_id, "Examples", "User ID assigned", f"{st.session_state.user_id}")
     if 'next_page' not in st.session_state:
         st.session_state.next_page = WELCOME_PAGE_ID
     # If the session current page is this page, display it

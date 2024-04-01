@@ -162,13 +162,13 @@ def assessment_page():
     # print(st.session_state.mitigation_strat)
 
 def main():
-    if 'user_id' not in st.session_state:
-        st.session_state.user_id = random.randint(1000000, 9999999)
-        log_user_interaction(st.session_state.user_id, "Assessment", "User ID assigned", f"{st.session_state.user_id}")
     if 'assessment_navbar_hidden' not in st.session_state:
         # Hide the side navbar, users need to flow through using the buttons and forms
         st.set_page_config(initial_sidebar_state="collapsed", layout="wide")
         st.session_state.assessment_navbar_hidden = True
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = random.randint(1000000, 9999999)
+        log_user_interaction(st.session_state.user_id, "Assessment", "User ID assigned", f"{st.session_state.user_id}")
     if 'next_page' not in st.session_state:
         st.session_state.next_page = WELCOME_PAGE_ID
     # If the session current page is this page, display it

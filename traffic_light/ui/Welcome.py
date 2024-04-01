@@ -69,13 +69,13 @@ def welcome_page():
     st.button("Next", key=f"welcome_next_button", on_click=switch_page, args=(st.session_state.welcome_start_time,))
 
 def main():
-    if 'sheets_client' not in st.session_state:
-        # Initialize connection to Google Sheets
-        st.session_state.sheets_client = init_connection()
     if 'welcome_navbar_hidden' not in st.session_state:
         # Hide the side navbar, users need to flow through using the buttons and forms
         st.set_page_config(initial_sidebar_state="collapsed")
         st.session_state.welcome_navbar_hidden = True
+    if 'sheets_client' not in st.session_state:
+        # Initialize connection to Google Sheets
+        st.session_state.sheets_client = init_connection()
     if 'user_id' not in st.session_state:
         st.session_state.user_id = random.randint(1000000, 9999999)
         log_user_interaction(st.session_state.user_id, "Welcome", "User ID assigned", f"{st.session_state.user_id}")

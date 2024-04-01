@@ -74,13 +74,13 @@ def thank_you_page():
     # st.button("Restart", key=f"thank_you_restart_button", on_click=switch_page, args=(st.session_state.thank_you_start_time,))
 
 def main():
-    if 'user_id' not in st.session_state:
-        st.session_state.user_id = random.randint(1000000, 9999999)
-        log_user_interaction(st.session_state.user_id, "Thank you", "User ID assigned", f"{st.session_state.user_id}")
     if 'thanks_navbar_hidden' not in st.session_state:
         # Hide the side navbar, users need to flow through using the buttons and forms
         st.set_page_config(initial_sidebar_state="collapsed", layout="wide")
         st.session_state.thanks_navbar_hidden = True
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = random.randint(1000000, 9999999)
+        log_user_interaction(st.session_state.user_id, "Thank you", "User ID assigned", f"{st.session_state.user_id}")
     # If the current page is not stored in the session state, set it to the welcome page
     if 'next_page' not in st.session_state:
         st.session_state.next_page = WELCOME_PAGE_ID
