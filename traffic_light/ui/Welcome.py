@@ -73,12 +73,12 @@ def main():
         # Hide the side navbar, users need to flow through using the buttons and forms
         st.set_page_config(initial_sidebar_state="collapsed")
         st.session_state.welcome_navbar_hidden = True
-    if 'sheets_client' not in st.session_state:
-        # Initialize connection to Google Sheets
-        st.session_state.sheets_client = init_connection()
     if 'user_id' not in st.session_state:
         st.session_state.user_id = random.randint(1000000, 9999999)
         log_user_interaction(st.session_state.user_id, "Welcome", "User ID assigned", f"{st.session_state.user_id}")
+    if 'sheets_client' not in st.session_state:
+        # Initialize connection to Google Sheets
+        st.session_state.sheets_client = init_connection()
     # If the current page is not stored in the session state, set it to the welcome page
     if 'next_page' not in st.session_state:
         st.session_state.next_page = "Welcome.py"
