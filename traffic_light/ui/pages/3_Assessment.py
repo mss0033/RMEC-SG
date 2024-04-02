@@ -163,7 +163,7 @@ def assessment_page():
     if 'assessment_start_time' not in st.session_state:
         st.session_state.assessment_start_time = time.time()
     # submitt_button = st.button("Submit", key=f"assessment_submit_button", on_click=switch_page, args=(st.session_state.assessment_start_time, st.session_state.assessment_mitigation_strat_select_box))
-    submitt_button = st.button("Submit", key=f"assessment_submit_button", on_click=switch_page, args=(st.session_state.assessment_start_time, True if is_spec_gaming else False, st.session_state.is_spec_gaming_confidence, ''))
+    submitt_button = st.button("Submit", key=f"assessment_submit_button", on_click=switch_page, args=(st.session_state.assessment_start_time, True if is_spec_gaming else False, st.session_state.is_spec_gaming_confidence, ''), disabled=(True if not is_spec_gaming and not is_not_spec_gaming else False))
     # print(st.session_state.mitigation_strat)
 
 def main():
