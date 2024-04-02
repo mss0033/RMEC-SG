@@ -82,7 +82,7 @@ def example_pages():
              \nBelow are clips of the simulated traffic situations described above. In each pair of clips, a single set controls the logic of the city's traffic lights.
              \nYour task will be to identify if the set, i.e. all of the logic for all of the traffic lights in the city, is specification gaming. In this experiment, specification gaming is likely to manifest as having a much better performance when compared to the baseline in one traffic scenario, but significantly worse performance, compared to the baseline, in another traffic scenario.
              \nPlease take a look at the sets below and try to get an idea of what a set that is specification gaming may perform on the traffic scenarios.
-             \nPlease also take note that the clips loop. At the beginning of the loop, traffic is shown flowing at a normal speed. As the clip progresses, the speed of the simulation is increased so that the full performance of the set can be shown in a reasonable time.""")
+             \nAt the beginning of each video traffic is shown flowing at a normal speed. As the clip progresses, the speed of the simulation is increased so that the full performance of the set can be shown in a reasonable time.""")
     st.markdown("---")
     col_1, col_2 = st.columns(2)
     col_1.video(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_stairstep_video.mp4")
