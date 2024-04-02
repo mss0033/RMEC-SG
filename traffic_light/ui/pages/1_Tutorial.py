@@ -63,9 +63,9 @@ def switch_page(start_time: float):
 def tutorial_pages():
     hide_side_navbar()
     st.title("Tutorial")
-    st.write(f"""This project aims to tackle a problem commonly found in optimization functions, such as those used in Machine Learning, Artificial Intelligence, and Evolutionary Computing.
+    st.write(f"""This project aims to tackle a problem commonly found in optimization systems, such as those used in Machine Learning, Artificial Intelligence, and Evolutionary Computing.
              \n This problem has a few names, but for our purposes, it will hereby be referred to as Specification Gaming.
-             \nSpecification Gaming, for this project, is defined as a situation where an optimization system, such as a Neural Network or Evolutionary Algorithm, produces a result that performs well according to some objective (i.e,\"maximize fitness\"\solution quality) by doing something unexpected or undesired.
+             \nSpecification Gaming, for this project, is defined as a situation where an optimization system, such as a Neural Network or Evolutionary Algorithm, produces a result that performs well according to some objective (i.e, maximize solution quality) by doing something unexpected or undesired.
              \nBelow are some visual examples of specification gaming.""")
     
     st.markdown("---")
@@ -76,10 +76,10 @@ def tutorial_pages():
     st.image("traffic_light/ui/resources/SG_example_images/quilt_of_sg.gif", caption=f"A collection of similar instances across a wide range of optimization systems.")
 
     st.markdown("---")
-    st.write(f"""From the above examples, a common theme emerges. All of the products of optimization found unexpected and undesirable methods of technically satisfying their optimization function while not having the desired emergent properties or behaviors.
+    st.write(f"""From the above examples, a common theme emerges. All of the products of optimization found unexpected and undesirable methods of technically satisfying their optimization system while not having the desired emergent properties or behaviors.
              \nWhile some of these examples may be amusing, unfortunately, not all examples are so funny. In more serious situations agents trained to drive cars or control planes may adopt niche behavior that scores well according to some optimization process but would put people at dire risk.
              \nTo go further, when these issues occur typically they are discovered at the end of long and expensive optimization processes such as evolutionary runs or neural network training. Therefore, specification gaming can also represent a significant and expensive time loss when it occurs. 
-             \nSo, to address this issue, this project seeks to investigate whether human-in-the-loop interactions can help identify and mitigate this Specification Gaming problem.""")
+             \nSo, to address this issue, this project seeks to investigate whether human-in-the-loop interactions can help identify this Specification Gaming problem.""")
     # Set up the session time tracking for this page
     if 'tutorial_start_time' not in st.session_state:
         st.session_state.tutorial_start_time = time.time()
