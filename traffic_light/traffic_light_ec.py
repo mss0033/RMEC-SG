@@ -353,7 +353,7 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
         evaluate_population(population=population, generation=generation, run_label=run_label)
         # Mitigate any specification gamed individuals
         if (generation + 1) % 5 == 0:
-            mitigate_sg_individuals(population=population, generation=generation, run_label=run_label, strategy=STRAT_REPLACE)
+            mitigate_sg_individuals(population=population, generation=generation, run_label=run_label, strategy=STRAT_PENALIZE)
         # Print some population stats
         print(f"Generation {generation + 1}")
         print(f"Best fitness: {np.min([inidiv.fitness for inidiv in population])}")
@@ -371,9 +371,9 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
 
 # Overwrite the main function cause that seems to be the thing to do in python
 if __name__ == "__main__":
-    print(str(evolutionary_algorithm(population_size=250, num_generations=50, initialize_from_existing=(True, 17), run_label="Golden_Run_Attempt_6_From_Gen_5_Replace_SG_Indivs_Every_5_Gens")))
+    print(str(evolutionary_algorithm(population_size=250, num_generations=50, initialize_from_existing=(True, 5), run_label="Golden_Run_Attempt_6_From_Gen_5_Penalize_SG_Indivs_Every_5_Gens")))
 
-# traci.start(SUMO_GUI_CMD_RANDOM + ["-n", f"{NETWORK_CONFIGS_DIR}/Golden_Run_Attempt_6_Gen_10_Replace_SG_Indivs/best_individuals/grid_network_best_indiv_Golden_Run_Attempt_6_Gen_10_Replace_SG_Indivs.net.xml"])
+# traci.start(SUMO_GUI_CMD_RANDOM + ["-n", f"{NETWORK_CONFIGS_DIR}/Golden_Run_Attempt_6_From_Gen_5_Replace_SG_Indivs_Every_5_Gens/best_individuals/grid_network_best_indiv_Golden_Run_Attempt_6_From_Gen_5_Replace_SG_Indivs_Every_5_Gens.net.xml"])
 # # pick an arbitrary junction
 # # junctionID = traci.junction.getIDList()[0]
 # # # subscribe around that junction with a sufficiently large

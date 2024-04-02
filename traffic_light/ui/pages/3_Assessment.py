@@ -92,23 +92,25 @@ def assessment_page():
     # mitigation_strats = ["Penalize Individual", "Remove Individual from Population", "Modify Fitness"]
     # Set up the page title and content
     st.title("Specification Gaming Assessment")
-    # message = f"""Please review the clips below of the individual's performance on the different traffic senarios, as well as the baseline performance.
+    # message = f"""Please review the clips below of the individual's performance on the different traffic scenarios, as well as the baseline performance.
     #          \nAfter your review, please select 'Yes' if you believe the agent is specification gaming, and 'No' otherwise.
     #          \nIf you select 'Yes', and addtional dropdown menu will appear that will allow you to select a mitigation strategy. Please select one of the strategies and then press the submit button."""
     message = f"""Please review the clips below. In the first set of 2 clips, the baseline performance is shown. An important note is that the same traffic light logic is being used in both clips, so what changes between clips is the traffic pattern, not the logic of the traffic lights."""
     st.write(message)
     st.markdown("---")
     col_1, col_2 = st.columns(2)
-    # col_1.image(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_stairstep.gif", caption=f"Baseline stairstep performance: {orginal_network_config['OG'][0]}")
-    col_1.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_stairstep.gif")}" width="100%" height="100%"><figcaption>Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG["OG"][0]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
-        unsafe_allow_html=True,
-    )
-    # col_2.image(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_random.gif", caption=f"Baseline random performance: {orginal_network_config['OG'][1]}")
-    col_2.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_random.gif")}" width="100%" height="100%"><figcaption>Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG["OG"][1]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
-        unsafe_allow_html=True,
-    )
+    col_1.video(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_stairstep_video.mp4")
+    col_1.caption(f"Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG['OG'][0]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.")
+    # col_1.markdown(
+    #     f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_stairstep.gif")}" width="100%" height="100%"><figcaption>Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG["OG"][0]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
+    #     unsafe_allow_html=True,
+    # )
+    col_2.video(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_random_video.mp4")
+    col_2.caption(f"Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG['OG'][1]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.")
+    # col_2.markdown(
+    #     f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_random.gif")}" width="100%" height="100%"><figcaption>Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG["OG"][1]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
+    #     unsafe_allow_html=True,
+    # )
 
     st.markdown("---")
     st.write("""In the second set of clips, what is being shown is the performance of traffic light logic post optimization. Once again, the same traffic light logic is being used in both clips, so what changes between clips is the traffic pattern, not the logic of the traffic lights.
@@ -121,17 +123,19 @@ def assessment_page():
     
     # Initialize columns to display the selected netowrk performance
     col_3, col_4 = st.columns(2)
-    # col_3.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif", caption=f"Stairstep performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][0]}")
-    col_3.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif")}" width="100%" height="100%"><figcaption>Set Sammie\'s Stairstep performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][0] / ORIGINAL_NETWORK_CONFIG["OG"][0]) * 100):.2f}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
-        unsafe_allow_html=True,
-    )
-    # col_4.image(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif", caption=f"Random performance (lower is better): {indiv_network_configs[st.session_state.network_to_display][1]}")
+    col_3.video(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep_video.mp4")
+    col_3.caption(f"Set Sammie\'s Stairstep performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][0] / ORIGINAL_NETWORK_CONFIG['OG'][0]) * 100):.2f}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.")
+    # col_3.markdown(
+    #     f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif")}" width="100%" height="100%"><figcaption>Set Sammie\'s Stairstep performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][0] / ORIGINAL_NETWORK_CONFIG["OG"][0]) * 100):.2f}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
+    #     unsafe_allow_html=True,
+    # )
+    col_4.video(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random_video.mp4")
+    col_4.caption(f"Set Sammie\'s Random performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][1] /ORIGINAL_NETWORK_CONFIG['OG'][1]) * 100):.2f}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.")
     # st.write("Agent statistics...")
-    col_4.markdown(
-        f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif")}" width="100%" height="100%"><figcaption>Set Sammie\'s Random performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][1] /ORIGINAL_NETWORK_CONFIG["OG"][1]) * 100):.2f}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
-        unsafe_allow_html=True,
-    )
+    # col_4.markdown(
+    #     f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif")}" width="100%" height="100%"><figcaption>Set Sammie\'s Random performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][1] /ORIGINAL_NETWORK_CONFIG["OG"][1]) * 100):.2f}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
+    #     unsafe_allow_html=True,
+    # )
     
     st.markdown("---")
     st.write("Is set Sammie specification gaming?")
@@ -145,8 +149,8 @@ def assessment_page():
     # if is_spec_gaming:
     #     selected_strat = st.selectbox("Select a mitigation strategy", mitigation_strats, index=None, key=f"assessment_mitigation_strat_select_box", disabled=(not is_spec_gaming))
     #     st.write(f"""A general hint for picking a strategy:
-    #              \nPenalizing the fitness of an individual is expected to be useful at discouraging some behavior, but is not a particularly strong action. Therefore it is likely to be a better if an individual displays a small disparity in senario performance
-    #              \nRemoving an individual is expected to be useful at preventing clear and obvious specification gamed behavior/qualities from spreading to other memebers of the population. Therefore, it is likely to be a better option if an individual is displaying a large disparity in senario performance
+    #              \nPenalizing the fitness of an individual is expected to be useful at discouraging some behavior, but is not a particularly strong action. Therefore it is likely to be a better if an individual displays a small disparity in scenario performance
+    #              \nRemoving an individual is expected to be useful at preventing clear and obvious specification gamed behavior/qualities from spreading to other memebers of the population. Therefore, it is likely to be a better option if an individual is displaying a large disparity in scenario performance
     #              \nModifiying the fitness function is expected to be useful if it is believed that the very assessment of fitness itself is flawed. This can radically alter the performance of the optimization and may cause general instibility. Therefore, it is only advisable if it is obvious that there is some inherent problem with how fitness is being evaluated.""")
     # print(f"Selected strat: {selected_strat}")
     # Set up a selection box for the mitigation strats
