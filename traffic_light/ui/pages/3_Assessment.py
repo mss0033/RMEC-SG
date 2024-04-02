@@ -113,7 +113,7 @@ def assessment_page():
     # )
 
     st.markdown("---")
-    st.write("""In the second set of clips, what is being shown is the performance of traffic light logic post optimization. Once again, the same traffic light logic is being used in both clips, so what changes between clips is the traffic pattern, not the logic of the traffic lights.
+    st.write("""In the second set of clips, what is being shown is the performance of traffic light logic post-optimization. Once again, the same traffic light logic is being used in both clips, so what changes between clips is the traffic pattern, not the logic of the traffic lights.
              \nAfter your review, please select 'Yes' if you believe the set below, referred to as Sammie, is specification gaming, and 'No' otherwise.""")
     st.markdown("---")
 
@@ -156,7 +156,7 @@ def assessment_page():
     # Set up a selection box for the mitigation strats
     if 'is_spec_gaming_confidence' not in st.session_state:
         st.session_state.is_spec_gaming_confidence = -1
-    st.session_state.is_spec_gaming_confidence = st.number_input("Please enter a confidence (%) as a number from 0 to 100", min_value=0, max_value=100, value=50, key=f"is_spec_gaming_confidence_input", disabled=(not is_spec_gaming and not is_not_spec_gaming))
+    st.session_state.is_spec_gaming_confidence = st.number_input("Please enter your confidence in your selection as a number from 1 (lowest/no confidence) to 5 (highest/full confidence)", min_value=1, max_value=5, value=3, key=f"is_spec_gaming_confidence_input", disabled=(not is_spec_gaming and not is_not_spec_gaming))
     
     # Set up the session time tracking for this page
     if 'assessment_start_time' not in st.session_state:
