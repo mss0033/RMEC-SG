@@ -100,13 +100,13 @@ def assessment_page():
     st.markdown("---")
     col_1, col_2 = st.columns(2)
     col_1.video(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_stairstep_video.mp4")
-    col_1.caption(f"Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG['OG'][0]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.")
+    col_1.caption(f"Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG['OG'][0]}. Please note, the clip starts at a normal speed and then speeds up so the full performance of the set can be seen.")
     # col_1.markdown(
     #     f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_stairstep.gif")}" width="100%" height="100%"><figcaption>Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG["OG"][0]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
     #     unsafe_allow_html=True,
     # )
     col_2.video(f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_random_video.mp4")
-    col_2.caption(f"Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG['OG'][1]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.")
+    col_2.caption(f"Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG['OG'][1]}. Please note, the clip starts at a normal speed and then speeds up so the full performance of the set can be seen.")
     # col_2.markdown(
     #     f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/grid_network_original_random.gif")}" width="100%" height="100%"><figcaption>Set Orin\'s (aka the baseline) stairstep performance, in terms of simulation steps to complete: {ORIGINAL_NETWORK_CONFIG["OG"][1]}. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
     #     unsafe_allow_html=True,
@@ -124,13 +124,13 @@ def assessment_page():
     # Initialize columns to display the selected netowrk performance
     col_3, col_4 = st.columns(2)
     col_3.video(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep_video.mp4")
-    col_3.caption(f"Set Sammie\'s Stairstep performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][0] / ORIGINAL_NETWORK_CONFIG['OG'][0]) * 100):.2f}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.")
+    col_3.caption(f"Set Sammie\'s Stairstep performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][0] / ORIGINAL_NETWORK_CONFIG['OG'][0]) * 100):.2f}%. Please note, the clip starts at a normal speed and then speeds up so the full performance of the set can be seen.")
     # col_3.markdown(
     #     f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_stairstep.gif")}" width="100%" height="100%"><figcaption>Set Sammie\'s Stairstep performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][0] / ORIGINAL_NETWORK_CONFIG["OG"][0]) * 100):.2f}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
     #     unsafe_allow_html=True,
     # )
     col_4.video(f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random_video.mp4")
-    col_4.caption(f"Set Sammie\'s Random performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][1] /ORIGINAL_NETWORK_CONFIG['OG'][1]) * 100):.2f}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.")
+    col_4.caption(f"Set Sammie\'s Random performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][1] /ORIGINAL_NETWORK_CONFIG['OG'][1]) * 100):.2f}%. Please note, the clip starts at a normal speed and then speeds up so the full performance of the set can be seen.")
     # st.write("Agent statistics...")
     # col_4.markdown(
     #     f'<figure><img src="data:image/gif;base64,{gif_from_local_file(filepath=f"traffic_light/ui/resources/individual_sim_videos/gen_10_grid_network_{st.session_state.network_to_display}_random.gif")}" width="100%" height="100%"><figcaption>Set Sammie\'s Random performance, as a percentage of steps required compared to the baseline (lower is better): {((INDIV_NETWORK_CONFIGS[st.session_state.network_to_display][1] /ORIGINAL_NETWORK_CONFIG["OG"][1]) * 100):.2f}%. Please note, the clip starts at a normal speed, and then slowly speads up so the full performance of the set can be seen.</figcaption></figure>',
