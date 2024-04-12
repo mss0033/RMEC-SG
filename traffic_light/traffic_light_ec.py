@@ -38,9 +38,9 @@ STEPS_OG_RANDOM_LIST = [3792, 3758, 3813, 3801, 5952, 3792, 3747, 3767, 3756]
 SUMO_BINARY = f"/usr/bin/sumo"
 SUMO_GUI_BINARY = f"/usr/bin/sumo-gui"
 SUMO_STAIRSTEP_ROUTE = f"{ROUTE_CONFIGS_DIR}/grid_network_0_routes_stairstep.rou.xml"
-SUMO_RANDOM_ROUTE = f"{ROUTE_CONFIGS_DIR}/grid_network_0_routes_random_4.rou.xml"
+SUMO_RANDOM_ROUTE = f"{ROUTE_CONFIGS_DIR}/grid_network_0_routes_random_2.rou.xml"
 SUMO_CMD_STAIRSTEP = [SUMO_BINARY, "-r", SUMO_STAIRSTEP_ROUTE, "--no-warnings", "true"]
-SUMO_CMD_RANDOM = [SUMO_BINARY, "--no-warnings", "true"]
+SUMO_CMD_RA,NDOM = [SUMO_BINARY, "--no-warnings", "true"]
 SUMO_GUI_CMD = [SUMO_GUI_BINARY, "-r", SUMO_STAIRSTEP_ROUTE, "--no-warnings", "true"]
 SUMO_GUI_CMD_RANDOM = [SUMO_GUI_BINARY, "-r", SUMO_RANDOM_ROUTE, "--no-warnings", "true"]
 
@@ -192,15 +192,15 @@ def initialize_population_from_exiting(population_size: 'int',
 
 # Only take the top % of individuals
 def max_fitness_selection(population: List[TLLogicSet]) -> List[TLLogicSet]:
-    population.sort(key=lambda x: x.fitness)
-    return [deepcopy(indiv) for indiv in population[:POPULATION_SIZE // 10]]
+    population.sort(key=lambda x: (x.fitness + x.penalty))
+    return [deepcopy(indiv) for indiv in population[:len(population) // 10]]
 
 def tournament_selection(population: List['TLLogicSet'], 
                          tournament_size: 'int') -> List['TLLogicSet']:
     selected_individuals = []
     for _ in range(len(population)):
         tournament = random.sample(population, tournament_size)
-        best_individual = min(tournament, key=lambda x: x.fitness)
+        best_individual = min(tournament, key=lambda x: (x.fitness + x.penalty))
         selected_individuals.append(deepcopy(best_individual))
     return selected_individuals
 
@@ -212,24 +212,36 @@ def run_simulation(index: 'int',
     libsumo.start(SUMO_CMD_STAIRSTEP + ["-n", f"{NETWORK_CONFIGS_DIR}/{run_label}/generation_{generation}/grid_network_{index}_modified.net.xml"], label=f"{index}")
     # Counter for the number of steps a simulation takes
     steps_stairstep = 0
+    stairstep_cars_teleported = 0
     # Run the first simulation
     while libsumo.simulation.getMinExpectedNumber() > 0:
         libsumo.simulationStep()
         steps_stairstep += 1
+        for veh_id in libsumo.vehicle.getIDList():
+            waiting_time = libsumo.vehicle.getWaitingTime(veh_id)
+            if waiting_time > 300:
+                stairstep_cars_teleported += 1
     # Close SUMO simulation
     libsumo.close()
     # Select a random route from the list of random routes
-    random_route_index = 4
+    random_route_index = 2
     steps_random = 0
+    random_cars_teleported = 0
     # Start SUMO simulation for a random route
     libsumo.start(SUMO_CMD_RANDOM + ["-r", f"{ROUTE_CONFIGS_DIR}/grid_network_0_routes_random_{random_route_index}.rou.xml", "-n", f"{NETWORK_CONFIGS_DIR}/{run_label}/generation_{generation}/grid_network_{index}_modified.net.xml"], label=f"{index}")
     while libsumo.simulation.getMinExpectedNumber() > 0:
         libsumo.simulationStep()
         steps_random += 1
+        for veh_id in libsumo.vehicle.getIDList():
+            waiting_time = libsumo.vehicle.getWaitingTime(veh_id)
+            if waiting_time > 300:
+                random_cars_teleported += 1
     # Close SUMO simulation
     libsumo.close()
     # Calculate fitness based on how many steps the simulation took
-    return ((steps_stairstep / (STEPS_OG_STAIRSTEP)) * STAIRSTEP_FITNESS_SCALAR) + ((steps_random / STEPS_OG_RANDOM_LIST[random_route_index]) * RANDOM_FITNESS_SCALAR)
+    stairstep_fitness_normalized = ((steps_stairstep / (STEPS_OG_STAIRSTEP)) * STAIRSTEP_FITNESS_SCALAR)
+    random_fitness_normalized = ((steps_random / STEPS_OG_RANDOM_LIST[random_route_index]) * RANDOM_FITNESS_SCALAR)
+    return (stairstep_fitness_normalized, random_fitness_normalized, (stairstep_fitness_normalized + random_fitness_normalized), stairstep_cars_teleported, random_cars_teleported)
 
 def process_task(index: int, generation: int, run_label: str, return_dict: dict):
     return_dict[index] = run_simulation(index=index, generation=generation, run_label=run_label, return_dict=return_dict)
@@ -251,18 +263,24 @@ def evaluate_population(population: List[TLLogicSet],
 
     # Update the fitness values in the population based on the results stored in return_dict
     for (key, value) in return_dict.items():
-        population[key].fitness = value
+        population[key].stairstep_fitness_normalized = value[0]
+        population[key].random_fitness_normalized = value[1]
+        population[key].fitness = value[2]
+        population[key].stairstep_cars_teleported = value[3]
+        population[key].random_cars_teleported = value[4]
 
 # Identify potentially specification gamed individuals
 def identify_specification_gaming_individuals(population: List[TLLogicSet]) -> dict[int, TLLogicSet]:
     indiv_to_consider = [individual for individual in population if individual.fitness <= (STAIRSTEP_FITNESS_SCALAR + RANDOM_FITNESS_SCALAR)]
-    fitness_values = [individual.fitness for individual in indiv_to_consider]
-    mean_fitness = np.mean(fitness_values)
-    std_dev_fitness = np.std(fitness_values)
-    
     potential_gaming_individuals = {
-        population.index(individual): individual for individual in population if individual.fitness <= (mean_fitness - std_dev_fitness)
+        population.index(individual): individual for individual in indiv_to_consider if individual.stairstep_cars_teleported > 10 or individual.random_cars_teleported > 10
     }
+
+    # Reset the penalty for any individual that was not identified as SG
+    for indiv in population:
+        if indiv not in potential_gaming_individuals.values() and indiv.penalty != 0:
+            print("invdiv had penalty reset")
+            indiv.penalty = 0
     
     return potential_gaming_individuals
 
@@ -273,15 +291,16 @@ def replace_indiv_with_clone(population: List[TLLogicSet], index_to_replace: int
 
 # Attempt to mitigate specification gaming indivis by penalizing their fitness
 def penalize_indiv_fitness(population: List[TLLogicSet], index_to_penalize: int, penalty: int):
-    population[index_to_penalize].fitness += penalty
+    population[index_to_penalize].penalty = penalty
 
 # Attempt to mitigate specification gaming indivs by modifying the fitness function
 def modify_fitness_function():
-    RANDOM_FITNESS_SCALAR = STAIRSTEP_FITNESS_SCALAR
+    global RANDOM_FITNESS_SCALAR
+    RANDOM_FITNESS_SCALAR = RANDOM_FITNESS_SCALAR * 1.30
 
 # Take actions against SG individuals
 def mitigate_sg_individuals(population: List[TLLogicSet], generation: int, run_label: str, strategy: str):
-    if not strategy:
+    if not strategy or strategy == "":
         return
     # Identify the individuals to mitigate
     individuals_to_mitigate = identify_specification_gaming_individuals(population=population)
@@ -290,14 +309,16 @@ def mitigate_sg_individuals(population: List[TLLogicSet], generation: int, run_l
     if strategy == STRAT_REPLACE:
         # For each one, replce it with a clone of an indiv not identified as potentially SG
         for index, _ in individuals_to_mitigate.items():
-            replace_indiv_with_clone(population=population, index_to_replace=index, invalid_indices=list(individuals_to_mitigate.keys()))
+            if random.randint(1, 10) <= 5:
+                replace_indiv_with_clone(population=population, index_to_replace=index, invalid_indices=list(individuals_to_mitigate.keys()))
+        # Write the mitigated population back to the files
+        write_population_to_files(population=population, generation=generation, run_label=run_label)
     elif strategy == STRAT_PENALIZE:
         for index, _ in individuals_to_mitigate.items():
-            penalize_indiv_fitness(population=population, index_to_penalize=index, penalty=(population[index].fitness * 0.5))
+            if random.randint(1, 10) <= 5:
+                penalize_indiv_fitness(population=population, index_to_penalize=index, penalty=(population[index].fitness * 0.5))
     elif strategy == STRAT_MOD_FITNESS:
-        modify_fitness_function()
-    # Write the mitigated population back to the files
-    write_population_to_files(population=population, generation=generation, run_label=run_label)
+        modify_fitness_function() 
 
 # Main body function for the overall evolutionary algorithm
 def evolutionary_algorithm(population_size: int = POPULATION_SIZE, 
@@ -322,14 +343,15 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
         evaluate_population(population=population, generation=initialize_from_existing[1] - 1, run_label=run_label)
         # Mitigate any specification gamed individuals
         if initialize_from_existing[1] % 5 == 0:
-            mitigate_sg_individuals(population=population, generation=initialize_from_existing[1] - 1, run_label=run_label, strategy=STRAT_REPLACE)
+            mitigate_sg_individuals(population=population, generation=initialize_from_existing[1] - 1, run_label=run_label, strategy=None)
     else:
         evaluate_population(population=population, generation=0, run_label=run_label)
     # Print some population stats
     print(f"Generation {initialize_from_existing[1]}")
-    print(f"Best fitness: {min([inidiv.fitness for inidiv in population])}")
-    print(f"Average fitness: {mean([inidiv.fitness for inidiv in population])}")
-    print(f"Standard Deviation fitness: {stdev([inidiv.fitness for inidiv in population])}")
+    print(f"Best fitness: {min([(indiv.fitness + indiv.penalty) for indiv in population])}")
+    print(f"Average fitness: {mean([(indiv.fitness + indiv.penalty) for indiv in population])}")
+    print(f"Standard Deviation fitness: {stdev([(indiv.fitness + indiv.penalty) for indiv in population])}")
+    print(f"Potentially specification gaming individuals: {list(identify_specification_gaming_individuals(population=population).keys())}")
 
     for generation in range(initialize_from_existing[1], num_generations):
         # Maximize selective pressure
@@ -351,19 +373,21 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
         write_population_to_files(population=population, run_label=run_label, generation=generation)
         # Evaluate the population
         evaluate_population(population=population, generation=generation, run_label=run_label)
+        # Sort the population
+        population.sort(key=lambda x: (x.fitness + x.penalty))
         # Mitigate any specification gamed individuals
         if (generation + 1) % 5 == 0:
-            mitigate_sg_individuals(population=population, generation=generation, run_label=run_label, strategy=STRAT_PENALIZE)
+            mitigate_sg_individuals(population=population, generation=generation, run_label=run_label, strategy=None)
         # Print some population stats
         print(f"Generation {generation + 1}")
-        print(f"Best fitness: {np.min([inidiv.fitness for inidiv in population])}")
-        print(f"Average fitness: {np.mean([inidiv.fitness for inidiv in population])}")
-        print(f"Standard Deviation fitness: {np.std([inidiv.fitness for inidiv in population])}")
+        print(f"Best fitness: {np.min([(indiv.fitness + indiv.penalty)  for indiv in population])}")
+        print(f"Average fitness: {np.mean([(indiv.fitness + indiv.penalty)  for indiv in population])}")
+        print(f"Standard Deviation fitness: {np.std([(indiv.fitness + indiv.penalty)  for indiv in population])}")
         # Identify specification gaming individuals
         print(f"Potentially specification gaming individuals: {list(identify_specification_gaming_individuals(population=population).keys())}")
 
     # Find the best individual
-    best_individual = min(population, key=lambda x: x.fitness)
+    best_individual = min(population, key=lambda x: x.fitness + x.penalty)
     # Write the best individual to a config files
     write_best_indiv_to_file(index=population.index(best_individual), generation=num_generations - 1, run_label=run_label, best_indiv=best_individual)
         
@@ -371,10 +395,10 @@ def evolutionary_algorithm(population_size: int = POPULATION_SIZE,
 
 # Overwrite the main function cause that seems to be the thing to do in python
 if __name__ == "__main__":
-    print(str(evolutionary_algorithm(population_size=250, num_generations=50, initialize_from_existing=(True, 5), run_label="Golden_Run_Attempt_6_From_Gen_5_Penalize_SG_Indivs_Every_5_Gens")))
+    print(str(evolutionary_algorithm(population_size=250, num_generations=50, initialize_from_existing=(False, 0), run_label="Golden_Run_Attempt_7")))
 
-# traci.start(SUMO_GUI_CMD_RANDOM + ["-n", f"{NETWORK_CONFIGS_DIR}/Golden_Run_Attempt_6_From_Gen_5_Replace_SG_Indivs_Every_5_Gens/best_individuals/grid_network_best_indiv_Golden_Run_Attempt_6_From_Gen_5_Replace_SG_Indivs_Every_5_Gens.net.xml"])
-# # pick an arbitrary junction
+# traci.start(SUMO_GUI_CMD_RANDOM + ["-n", f"{NETWORK_CONFIGS_DIR}/Golden_Run_Attempt_7/{BEST_INDIVIDUALS_DIR}/grid_network_best_indiv_Golden_Run_Attempt_7.net.xml"])
+# # # pick an arbitrary junction
 # # junctionID = traci.junction.getIDList()[0]
 # # # subscribe around that junction with a sufficiently large
 # # # radius to retrieve the speeds of all vehicles in every step
@@ -382,11 +406,16 @@ if __name__ == "__main__":
 # #     junctionID, tc.CMD_GET_VEHICLE_VARIABLE, 1000000,
 # #     [tc.VAR_SPEED, tc.VAR_ALLOWED_SPEED]
 # # )
-# # Get the step length
-# # stepLength = traci.simulation.getDeltaT()
+# # # Get the step length
+# stepLength = traci.simulation.getDeltaT()
 # sim_start_time = time()
+# random_cars_teleported = 0
 # while traci.simulation.getMinExpectedNumber() > 0:
 #     traci.simulationStep()
+#     for veh_id in traci.vehicle.getIDList():
+#         waiting_time = traci.vehicle.getWaitingTime(veh_id)
+#         if waiting_time > 300:
+#             random_cars_teleported += 1
 #     # scResults = traci.junction.getContextSubscriptionResults(junctionID)
 #     # halting = 0
 #     # if scResults:
@@ -397,5 +426,6 @@ if __name__ == "__main__":
 #     #     meanSpeedRelative = sum(relSpeeds) / running
 #     #     timeLoss = (1 - meanSpeedRelative) * running * stepLength
 # print(traci.simulation.getTime())
+# print(random_cars_teleported)
 # print(f"Time taken by simulation: {time() - sim_start_time}")
 # traci.close()

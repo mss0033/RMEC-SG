@@ -3,6 +3,8 @@ traffic_light/ui/__pycache__
 traffic_light/network_configs/old_runs
 traffic_light/network_configs/Run_*
 traffic_light/network_configs/Golden_Run_*
+traffic_light/network_configs/Both_Traffic_Pattern_Contributions_Equal
 traffic_light/ui/.streamlit/secrets.toml
+traffic_light/results
 .streamlit/secrets.toml
 user_interactions.log

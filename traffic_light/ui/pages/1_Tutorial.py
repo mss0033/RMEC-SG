@@ -64,7 +64,7 @@ def tutorial_pages():
     hide_side_navbar()
     st.title("Tutorial")
     st.write(f"""This project aims to tackle a problem commonly found in optimization systems, such as those used in Machine Learning, Artificial Intelligence, and Evolutionary Computing.
-             \n This problem has a few names, but for our purposes, it will hereby be referred to as Specification Gaming.
+             \nThis problem has a few names, but for our purposes, it will hereby be referred to as Specification Gaming.
              \nSpecification Gaming, for this project, is defined as a situation where an optimization system, such as a Neural Network or Evolutionary Algorithm, produces a result that performs well according to some objective (i.e, maximize solution quality) by doing something unexpected or undesired.
              \nBelow are some visual examples of specification gaming.""")
     

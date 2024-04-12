@@ -7,6 +7,11 @@ class TLLogicSet:
     def __init__(self, tllogics: List['TLLogic'] = None):
         self.tllogics = tllogics
         self.fitness = 0
+        self.stairstep_fitness_normalized = 0
+        self.random_fitness_normalized = 0
+        self.stairstep_cars_teleported = 0
+        self.random_cars_teleported = 0
+        self.penalty = 0
 
     def mutate(self, phase_mutation_rate: 'float'):
         for tllogic in self.tllogics:
